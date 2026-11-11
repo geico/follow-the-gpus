@@ -1,0 +1,8 @@
+# Runtime packages of the Function App. The remote build installs this file.
+# Keep the pins the same as in pyproject.toml. A test checks that.
+azure-functions==1.25.0
+azure-identity==1.26.0
+azure-mgmt-compute==38.4.0
+azure-mgmt-resource==26.0.0
+azure-mgmt-resourcegraph==8.0.1
+azure-storage-blob==12.31.0

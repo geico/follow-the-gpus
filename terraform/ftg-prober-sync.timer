@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ftg-prober-sync.service on a timer (ADR 0012)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

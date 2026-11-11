@@ -1,0 +1,14 @@
+# A targets file whose 1 provisioning_probes entry is simulate: true and carries no
+# allow_billable_provisioning (ADR 0011 section 3, rule 3: a simulated job needs no consent, and the guard
+# must still pass).
+experiment: ftg-20261014-example
+azure:
+  jobs:
+    - {module: az_spot_score, regions: [eastus]}
+  modules:
+    az_spot_score:
+      type: az_spot_score
+      spot_sizes: [Standard_NC40ads_H100_v5]
+  provisioning_probes:
+    az_capacity_reservation:
+      - {sku: Standard_D2as_v4, region: eastus, zone: null, n: 2, placement_group_mode: multi, simulate: true}

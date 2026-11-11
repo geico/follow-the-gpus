@@ -1,0 +1,62 @@
+# AWS stack targets. OpenTofu runs through mise. The settings are in terraform/aws/terraform.tfvars
+# (copy terraform.tfvars.example). The state is local unless terraform/aws/backend.hcl exists.
+# Your AWS CLI login selects the account. AUTO_APPROVE=1 skips the deploy and destroy prompts.
+
+AWS_TF_DIR ?= terraform/aws
+AWS_TF ?= $(MISE_EXEC) tofu -chdir=$(AWS_TF_DIR)
+AUTO_APPROVE ?=
+AWS_TF_APPROVE = $(if $(filter 1,$(AUTO_APPROVE)),-auto-approve,)
+AWS_TF_INIT = $(AWS_TF) init -input=false $(if $(wildcard $(AWS_TF_DIR)/backend.hcl),-backend-config=backend.hcl)
+AWS_TFVARS = @test -f $(AWS_TF_DIR)/terraform.tfvars || { echo "copy $(AWS_TF_DIR)/terraform.tfvars.example to $(AWS_TF_DIR)/terraform.tfvars and put in your values" >&2; exit 2; }
+
+.PHONY: plan/aws
+## Plan the AWS stack into terraform/aws/tfplan; read the plan, then run apply/aws
+plan/aws:
+	$(AWS_TFVARS)
+	$(AWS_TF_INIT)
+	$(AWS_TF) plan -input=false -out=tfplan
+
+.PHONY: apply/aws
+## Apply the saved plan terraform/aws/tfplan, and nothing else
+apply/aws:
+	$(AWS_TFVARS)
+	$(AWS_TF) apply -input=false tfplan
+
+.PHONY: deploy/aws
+## Deploy the AWS stack (tofu init and apply). AUTO_APPROVE=1 skips the prompt
+deploy/aws:
+	$(AWS_TFVARS)
+	$(AWS_TF_INIT)
+	$(AWS_TF) apply -input=false $(AWS_TF_APPROVE)
+
+.PHONY: destroy/aws
+## WARNING!!! Destroy the AWS stack. Empty the data bucket first. AUTO_APPROVE=1 skips the prompt
+destroy/aws:
+	$(AWS_TF_INIT)
+	$(AWS_TF) destroy -input=false $(AWS_TF_APPROVE)
+
+.PHONY: status/aws
+## Show the prober VM state, leaked Capacity Reservations, and the newest 5 object keys in the data bucket
+status/aws:
+	@tf='$(AWS_TF)'; \
+	i=$$($$tf output -no-color -raw instance_id 2>/dev/null); \
+	case "$$i" in "" | *[[:space:]]*) echo "status/aws: no instance_id output in $(AWS_TF_DIR); the stack is not deployed. Run make plan/aws and make apply/aws" >&2; exit 2 ;; esac; \
+	$(MISE_EXEC) uv run $(AWS_TF_DIR)/status.py "$$i" \
+	  "$$($$tf output -raw bucket_name)" \
+	  "$$($$tf output -raw region)" \
+	  "$$($$tf output -raw experiment)" \
+	  "$$($$tf output -json target_regions)"
+
+.PHONY: lint/aws
+## Check the AWS OpenTofu format and validate it (no credentials needed)
+lint/aws:
+	$(AWS_TF) fmt -check -recursive
+	$(AWS_TF) init -backend=false -input=false
+	$(AWS_TF) validate
+
+.PHONY: test/aws
+## Run the OpenTofu tests of the AWS stack with mock providers (no credentials needed)
+test/aws:
+	bash -n $(AWS_TF_DIR)/user_data.sh.tftpl
+	$(AWS_TF) init -backend=false -input=false
+	$(AWS_TF) test

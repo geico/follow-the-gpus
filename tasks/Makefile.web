@@ -1,0 +1,114 @@
+# Board targets: the database step and the static board in web/.
+# The requirements are in spec/0006-dashboard-spec.md, section 12.
+
+WEB_DIR ?= web
+WEB_PORT ?= 4173
+WEB_NPM ?= $(MISE_EXEC) npm --prefix $(WEB_DIR)
+# No audit and no funding lines, and only errors from npm.
+WEB_NPM_CI ?= ci --no-audit --no-fund --loglevel=error
+
+.PHONY: web/deps
+## Install the npm packages of web/ with npm ci, when node_modules is missing, empty, or older than the lock file
+# npm writes node_modules/.package-lock.json after an install, so an empty or wiped directory has no such file.
+web/deps:
+	@if [ ! -f $(WEB_DIR)/node_modules/.package-lock.json ] || [ $(WEB_DIR)/package-lock.json -nt $(WEB_DIR)/node_modules/.package-lock.json ]; then \
+	  $(WEB_NPM) $(WEB_NPM_CI); \
+	fi
+
+# The board reads the database (spec 0006 sections 8 and 12), not a store. `live` when DB_MIRROR holds a
+# row file or a daily file, else the generated `sample`. The sample never overwrites the real database.
+WEB_SOURCE ?= $(if $(shell find "$(DB_MIRROR)" \( -name '*.jsonl' -o -name '*.jsonl.zst' \) -print 2>/dev/null | head -n 1),live,sample)
+WEB_ROWS ?= $(CURDIR)/data/$(if $(filter live,$(WEB_SOURCE)),rows,sample/rows)
+WEB_DB ?= $(CURDIR)/data/$(if $(filter live,$(WEB_SOURCE)),ftg.duckdb,sample.duckdb)
+
+# Make does not handle a space in a path, so a web/ goal stops early with a clear message.
+# The check runs only when a goal starts with web/, so help, lint, and data/db work in a path with a space.
+ifneq (,$(filter web/%,$(MAKECMDGOALS)))
+ifneq (,$(findstring $() ,$(WEB_DIR)$(WEB_DB)$(CURDIR)))
+$(error WEB_DIR, WEB_DB, and the repo path must not contain a space; WEB_DIR is "$(WEB_DIR)", WEB_DB is "$(WEB_DB)", and the repo path is "$(CURDIR)")
+endif
+endif
+
+.PHONY: web/db
+## Build the database WEB_DB of the board from the mirror DB_MIRROR (WEB_SOURCE live) or from web/sample/ (sample, generated first when it is missing); no network
+web/db:
+	@if [ "$(WEB_SOURCE)" = sample ] && [ ! -d "$(WEB_DIR)/sample" ]; then $(MAKE) --no-print-directory web/sample; fi
+	@$(MAKE) --no-print-directory data/db DB_MIRROR="$(if $(filter live,$(WEB_SOURCE)),$(DB_MIRROR),$(abspath $(WEB_DIR))/sample)" ROWS_DIR="$(WEB_ROWS)" DB_FILE="$(WEB_DB)"
+
+.PHONY: web/run
+## Run the board on http://127.0.0.1:WEB_PORT/ from the database WEB_DB (built first); the API runs in the Vite dev server
+web/run: web/deps web/db
+	@if [ -n "$(WEB_QUIET)" ]; then $(MAKE) --no-print-directory -s web/newest WEB_QUIET="$(WEB_QUIET)"; else echo "web/run: source $(WEB_SOURCE), database $(WEB_DB)"; fi
+	@WEB_QUIET="$(WEB_QUIET)" WEB_DB="$(WEB_DB)" WEB_PORT="$(WEB_PORT)" $(MISE_EXEC) $(WEB_DIR)/scripts/run.sh
+
+.PHONY: dev
+## Run the board locally with fresh data: sync the rows, rebuild the database, start the board (scripts/dev.sh); `mise run dev` calls it
+dev:
+	@$(MISE_EXEC) scripts/dev.sh
+
+.PHONY: web/newest
+## Print 1 line: the board URL and the newest row time of each cloud in the database WEB_DB (read-only); with WEB_QUIET, only the newest row times (Vite prints the URL)
+web/newest:
+	@t=$$($(MISE_EXEC) duckdb -readonly -noheader -list "$(WEB_DB)" -cmd "SET TimeZone='UTC'" \
+	  -c "SELECT string_agg(provider || ' ' || strftime(m, '%Y-%m-%d %H:%MZ'), ', ' ORDER BY provider) FROM (SELECT provider, max(ts_utc) AS m FROM rows GROUP BY provider)") || exit 1; \
+	if [ -n "$(WEB_QUIET)" ]; then echo "source $(WEB_SOURCE), newest rows: $$t"; \
+	else echo "board http://127.0.0.1:$(WEB_PORT)/ (Ctrl-C stops it), source $(WEB_SOURCE), newest rows: $$t"; fi
+
+.PHONY: web/build
+## Build the static board into web/dist/ (the page only; web/export adds the API files)
+web/build: web/deps
+	$(WEB_NPM) run build
+
+.PHONY: web/export
+## Write the static board to web/dist/: the built page and every API file, equal to the server bodies; needs no login
+web/export: web/db web/build
+	$(WEB_NPM) run export -- "$(abspath $(WEB_DB))" "$(abspath $(WEB_DIR))/dist"
+
+OUT ?= $(abspath $(WEB_DIR))/dist/standalone.html
+
+.PHONY: web/standalone
+## Write 1 self-contained HTML file of the board (OUT, default web/dist/standalone.html) that opens from file:// with no network
+web/standalone: web/export
+	$(WEB_NPM) run standalone -- "$(abspath $(WEB_DIR))/dist" "$(abspath $(OUT))"
+	@echo "web/standalone: $(abspath $(OUT))"
+
+.PHONY: web/preview
+## Serve web/dist/ (from web/export) on http://127.0.0.1:WEB_PORT/ with vite preview; builds nothing
+web/preview: web/deps
+	@test -f $(WEB_DIR)/dist/index.html || { echo "web/preview: $(WEB_DIR)/dist/ is missing; run 'make web/export' first" >&2; exit 1; }
+	@echo "web/preview: http://127.0.0.1:$(WEB_PORT)/"
+	$(WEB_NPM) run preview -- --host 127.0.0.1 --port $(WEB_PORT) --strictPort
+
+.PHONY: web/test
+## Run the unit tests (Vitest); no network and no cloud credentials
+web/test: web/deps
+	$(WEB_NPM) test
+
+.PHONY: web/lint
+## Check web/ with Biome (lint and format) and the TypeScript compiler
+web/lint: web/deps
+	$(WEB_NPM) run lint
+	$(WEB_NPM) run typecheck
+
+.PHONY: web/fixture
+## Write the seeded synthetic events fixture web/test/fixtures/board/events.json again
+web/fixture:
+	$(MISE_EXEC) node $(WEB_DIR)/scripts/gen-board-fixture.mjs
+
+.PHONY: web/sample
+## Write the synthetic store web/sample/ (git-ignored) with the duckdb CLI that mise pins
+web/sample:
+	$(MISE_EXEC) $(WEB_DIR)/scripts/make-sample.sh
+
+.PHONY: web/clean
+## Remove web/dist/ and web/node_modules/
+web/clean:
+	rm -rf $(WEB_DIR)/dist $(WEB_DIR)/node_modules
+
+.PHONY: lint/web
+## Same as web/lint, for the lint aggregate
+lint/web: web/lint
+
+.PHONY: test/web
+## Same as web/test, for the test aggregate
+test/web: web/test

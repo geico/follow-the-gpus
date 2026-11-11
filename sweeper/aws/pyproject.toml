@@ -1,0 +1,31 @@
+# Dev project for the AWS sweeper (spec 0013). The Lambda zip holds only handler.py and the
+# sweeper/ package: the Lambda Python runtime includes boto3, so the zip ships no packages.
+# boto3 is a dev pin only, for the botocore Stubber tests, which check each fake request and
+# response against the real EC2 and S3 service models.
+[project]
+name = "ftg-sweeper-aws"
+version = "0.1.0"
+description = "Scheduled Lambda function that cancels leaked probe Capacity Reservations."
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "boto3==1.43.111",
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

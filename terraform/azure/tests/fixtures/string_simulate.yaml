@@ -1,0 +1,6 @@
+# For tofu test only: a string `simulate` is not a boolean and must fail the plan.
+experiment: ftg-20261016-string-simulate
+azure:
+  provisioning_probes:
+    az_vmss_flex:
+      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, simulate: "false"}

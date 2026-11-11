@@ -1,0 +1,63 @@
+# Settings of the Azure stack. Every value in this file is made up.
+#
+# 1. Copy this file to terraform.tfvars in the same folder:
+#      cp terraform.tfvars.example terraform.tfvars
+# 2. Replace every value with your own.
+# 3. Never commit terraform.tfvars. Git ignores it.
+#
+# OpenTofu reads terraform.tfvars by itself. Each variable is in variables.tf.
+# Credentials come from your own az login, never from this file.
+
+# The subscription of the deploy.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# The control region. The prober VM, the data store, and subnet_id are here.
+location = "eastus"
+
+# Required. Your existing resource group. Every resource of the stack goes here.
+resource_group_name = "example-ftg-rg"
+
+# Required. Your existing subnet in location. The stack creates no network.
+subnet_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-network-rg/providers/Microsoft.Network/virtualNetworks/example-vnet/subnets/example-subnet"
+
+# The experiment file, relative to this folder. Its experiment: key holds a dated name,
+# for example ftg-20260101-example.
+targets_file = "../../config/targets.yaml"
+
+# Extra tags on each resource. The key experiment is not allowed.
+tags = { owner = "example-team" }
+
+# Optional. Email address for the budget alerts and the sweeper-stopped alert. Empty means none.
+# alert_email = "alerts@example.com"
+
+# Optional. Monthly budget of the resource group, in the billing currency. The default is 50.
+# budget_amount = 50
+
+# Consent: true lets the stack grant the rights to create billable capacity. Keep it false.
+grant_billable_provisioning = false
+
+# Optional. One isolated subnet for each other region of a scale-set probe.
+# probe_subnet_ids = {
+#   westus2 = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-network-rg/providers/Microsoft.Network/virtualNetworks/example-probe-vnet/subnets/example-probe-subnet"
+# }
+
+# Optional. The size of the prober VM, when the default size has no free cores.
+# prober_vm_size = "Standard_B2ats_v2"
+
+# Optional. The sweeper plan SKU: Y1 (the default), B1, B2, B3, or S1.
+# sweeper_plan_sku = "Y1"
+
+# Optional. The region of the sweeper, when location has no App Service quota.
+# sweeper_location = "eastus2"
+
+# Optional. An HTTP egress proxy: a host name and a port, no IP address.
+# egress_proxy_url = "http://proxy.example.com:3128"
+
+# Optional. Extra hosts that bypass the proxy.
+# no_proxy = [".blob.core.windows.net"]
+
+# Optional. Entra object IDs that get read access to the data, besides the deployer.
+# data_reader_principal_ids = ["00000000-0000-0000-0000-000000000000"]
+
+# Optional. Prefix of each resource name: 2 to 10 lower-case letters and digits.
+# name_prefix = "ftg"

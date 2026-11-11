@@ -1,0 +1,20 @@
+# Optional: keep the OpenTofu state of the AWS stack in an S3 bucket. Every value is made up.
+# Without this file, the state is a local file in this folder (terraform.tfstate).
+#
+# 1. Make the bucket first, and turn on versioning.
+# 2. Copy this file to backend.hcl in the same folder, and replace every value with your own:
+#      cp backend.hcl.example backend.hcl
+# 3. The stack has no backend block, so add one in a file of its own. Make
+#    backend_override.tf in the same folder with this content:
+#      terraform {
+#        backend "s3" {}
+#      }
+# 4. Run: tofu -chdir=terraform/aws init -backend-config=backend.hcl
+#    make plan/aws also passes -backend-config=backend.hcl when the file exists.
+#
+# Git ignores backend.hcl and backend_override.tf. Never commit them.
+
+bucket       = "example-ftg-state"
+key          = "ftg-20260101-example/aws.tfstate"
+region       = "us-east-1"
+use_lockfile = true

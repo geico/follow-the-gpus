@@ -1,0 +1,5 @@
+# Minimal targets file for a test that only needs a non-default experiment name (ADR 0010
+# section 2: the file is the only source of experiment; there is no experiment_tag variable).
+experiment: demo-run
+aws: {}
+azure: {}

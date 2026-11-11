@@ -1,0 +1,3 @@
+# For tofu test only: an empty `aws:` section (null) must pass the key check, not crash the plan.
+experiment: ftg-20261014-null-section
+aws:

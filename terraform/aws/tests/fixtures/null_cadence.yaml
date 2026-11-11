@@ -1,0 +1,4 @@
+# For tofu test only: an empty `cadence:` (null) must pass the key check, not crash the plan.
+experiment: ftg-20261014-null-cadence
+aws:
+  cadence:

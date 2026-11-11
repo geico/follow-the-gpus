@@ -1,0 +1,36 @@
+# Preflight checks before a deploy. The specs are spec/0004 (AWS) and spec/0005 (Azure).
+# AWS calls go through boto3. Azure calls go through the az CLI, which the Azure stack needs anyway.
+[project]
+name = "ftg-preflight"
+version = "0.1.0"
+description = "Read-only checks of quota, access, and capacity before make apply/aws or apply/azure."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # The crt extra lets botocore read a profile from `aws login`.
+    "boto3[crt]>=1.40,<2",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.4.2",
+    "ruff==0.14.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_probes.py" = ["E501"]  # long expected table rows

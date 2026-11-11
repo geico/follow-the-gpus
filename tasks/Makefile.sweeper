@@ -1,0 +1,31 @@
+# Sweeper targets: the Azure timer function in sweeper/azure and the AWS Lambda function in sweeper/aws. Python tools run through uv, which mise pins.
+
+# The folder that holds the Function App and its pyproject.toml.
+SWEEPER_DIR ?= sweeper/azure
+SWEEPER_UV ?= $(MISE_EXEC) uv --directory $(SWEEPER_DIR) run --locked
+
+.PHONY: sweeper/test
+## Run the sweeper unit tests with pytest; no network and no cloud credentials
+sweeper/test:
+	$(SWEEPER_UV) pytest
+
+.PHONY: sweeper/lint
+## Check the sweeper code with ruff: lint rules and format
+sweeper/lint:
+	$(SWEEPER_UV) ruff check .
+	$(SWEEPER_UV) ruff format --check .
+
+# The AWS sweeper: the Lambda function in sweeper/aws (spec 0013). Same tools, its own project.
+SWEEPER_AWS_DIR ?= sweeper/aws
+SWEEPER_AWS_UV ?= $(MISE_EXEC) uv --directory $(SWEEPER_AWS_DIR) run --locked
+
+.PHONY: sweeper/aws/test
+## Run the AWS sweeper unit tests with pytest and botocore Stubber; no network and no cloud credentials
+sweeper/aws/test:
+	$(SWEEPER_AWS_UV) pytest
+
+.PHONY: sweeper/aws/lint
+## Check the AWS sweeper code with ruff: lint rules and format
+sweeper/aws/lint:
+	$(SWEEPER_AWS_UV) ruff check .
+	$(SWEEPER_AWS_UV) ruff format --check .

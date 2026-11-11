@@ -1,0 +1,56 @@
+# Lint targets. Each tool runs through mise, at the version that mise.toml pins.
+
+# The make program that lint/make uses for its dry runs.
+# Do not write $(MAKE) in the recipe: make runs such lines even with --dry-run.
+LINT_MAKE ?= $(MAKE)
+
+# All Markdown files that git tracks or does not ignore, separated by NUL.
+LINT_MARKDOWN_FILES ?= git ls-files -z --cached --others --exclude-standard -- '*.md'
+
+.PHONY: lint
+## Run all lint checks: the docs, the Makefiles, both stacks, the prober, both sweepers, the preflight, and the dashboard
+lint: lint/markdown lint/links lint/decisions lint/make lint/aws lint/azure lint/web prober/lint sweeper/lint sweeper/aws/lint preflight/lint web/lint
+
+.PHONY: fmt
+## Fix what lint checks: the Markdown files with markdownlint-cli2, web/ with Biome, both OpenTofu stacks with tofu fmt, and the prober, both sweepers, and the preflight with ruff (check --fix, then format)
+fmt: web/deps
+	$(LINT_MARKDOWN_FILES) | xargs -0 $(MISE_EXEC) markdownlint-cli2 --fix
+	$(WEB_NPM) run format
+	$(AWS_TF) fmt -recursive
+	$(AZURE_TF) fmt -recursive
+	$(PROBER_UV) run ruff check --fix .
+	$(PROBER_UV) run ruff format .
+	$(SWEEPER_UV) ruff check --fix .
+	$(SWEEPER_UV) ruff format .
+	$(SWEEPER_AWS_UV) ruff check --fix .
+	$(SWEEPER_AWS_UV) ruff format .
+	$(PREFLIGHT_UV) ruff check --fix .
+	$(PREFLIGHT_UV) ruff format .
+
+.PHONY: lint/markdown
+## Check the Markdown style with markdownlint-cli2
+lint/markdown:
+	$(LINT_MARKDOWN_FILES) | xargs -0 $(MISE_EXEC) markdownlint-cli2
+
+.PHONY: lint/links
+## Check the local links in Markdown files with lychee (offline)
+lint/links:
+	$(LINT_MARKDOWN_FILES) | xargs -0 $(MISE_EXEC) lychee --offline --no-progress
+
+.PHONY: lint/decisions
+## Fail when 2 files in decisions/ share an ADR number
+lint/decisions:
+	@dup=$$(ls decisions | grep -E '^[0-9]{4}-' | cut -c1-4 | sort | uniq -d); \
+	if [ -n "$$dup" ]; then echo "lint/decisions: duplicate ADR number: $$dup"; exit 1; fi; \
+	echo "lint/decisions: each ADR has its own number"
+
+.PHONY: lint/make
+## Dry-run each Makefile to find syntax errors, then dry-run lint and test to find missing targets
+# Each file gets itself as the goal: make reads the whole file, but does not build a target of it.
+lint/make:
+	@for f in Makefile tasks/Makefile.*; do \
+	  echo "make --just-print --dry-run -f $$f $$f"; \
+	  $(LINT_MAKE) --just-print --dry-run -f $$f $$f >/dev/null || exit 1; \
+	done
+	@echo "make --just-print --dry-run lint test"
+	@$(LINT_MAKE) --just-print --dry-run lint test >/dev/null

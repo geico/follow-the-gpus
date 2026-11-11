@@ -1,0 +1,49 @@
+{
+  "name": "ftg-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Availability board for the GPU capacity tracker. See spec/0006-dashboard-spec.md.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "export": "node scripts/export.ts",
+    "standalone": "node scripts/standalone.ts",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/board/derive"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "30.1.3",
+    "shadcn": "4.23.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.3"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.5.6-r.2",
+    "@fontsource/inter": "5.3.0",
+    "@phosphor-icons/react": "2.1.10",
+    "@radix-ui/react-tooltip": "1.4.1",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.0"
+  }
+}

@@ -1,0 +1,6 @@
+experiment: ftg-20261014-duplicate-vmss
+azure:
+  provisioning_probes:
+    az_vmss_flex:
+      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}
+      - {sku: STANDARD_B2S, region: EastUS, zone: 1, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}

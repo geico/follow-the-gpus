@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+
+# Build output and local state
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+dist/
+node_modules/
+data/
+!web/src/data/
+*.tfstate
+*.tfstate.*
+.terraform/
+*.auto.tfvars
+backend_override.tf
+tfplan
+
+# Local stack inputs and remote-state settings
+terraform.tfvars
+backend.hcl
+backend_override.tf.json
+
+# Private notes per machine
+*.local.md

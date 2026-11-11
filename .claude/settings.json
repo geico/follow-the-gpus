@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Bash(make apply/*)",
+      "Bash(make deploy/*)",
+      "Bash(make destroy/*)",
+      "Bash(*AUTO_APPROVE=1*)",
+      "Bash(*QUOTA_ARGS=--apply*)",
+      "Bash(tofu apply*)",
+      "Bash(tofu destroy*)",
+      "Bash(mise exec -- tofu apply*)",
+      "Bash(mise exec -- tofu destroy*)",
+      "Bash(aws ec2 run-instances*)",
+      "Bash(aws ec2 create-capacity-reservation*)",
+      "Bash(aws ec2 purchase-capacity-block*)",
+      "Bash(aws service-quotas request-service-quota-increase*)",
+      "Bash(az vm create*)",
+      "Bash(az vmss create*)",
+      "Bash(az quota create*)",
+      "Bash(az group delete*)"
+    ]
+  }
+}
