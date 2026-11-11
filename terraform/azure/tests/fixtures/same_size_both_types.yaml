@@ -1,0 +1,7 @@
+experiment: ftg-20261014-both-types
+azure:
+  provisioning_probes:
+    az_capacity_reservation:
+      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}
+    az_vmss_flex:
+      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}

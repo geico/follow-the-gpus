@@ -1,0 +1,67 @@
+# Test targets.
+
+.PHONY: test
+## Run all tests: the hooks, both stacks, the prober, both sweepers, the preflight, and the dashboard; no cloud credentials
+test: test/hooks test/aws test/azure test/sync test/lifecycle test/status test/destroy test/verify-sweeper test/verify test/sweeper-redeploy test/stale-build-artifact test/web test/db test/data-sync test/dev prober/test sweeper/test sweeper/aws/test preflight/test web/test
+
+.PHONY: test/sync
+## Test terraform/sync.sh (ADR 0012), the VM-side pull and restart shared by both stacks; no network, no cloud credentials
+test/sync:
+	bash -n terraform/sync.sh
+	$(MISE_EXEC) bash terraform/tests/sync.test.sh
+
+.PHONY: test/lifecycle
+## Check that create_before_destroy is set only on the hash-named code objects; no credentials
+test/lifecycle:
+	$(MISE_EXEC) bash terraform/tests/create-before-destroy.test.sh
+
+.PHONY: test/status
+## Check that every az call of the Azure status script is scoped to the target subscription; no credentials
+test/status:
+	$(MISE_EXEC) bash terraform/tests/status.test.sh
+
+.PHONY: test/destroy
+## Check that destroy/aws and destroy/azure pass backend.hcl to tofu init, with a real tofu and a closed local port; no credentials
+test/destroy:
+	$(MISE_EXEC) bash terraform/tests/destroy.test.sh
+
+.PHONY: test/verify-sweeper
+## Check the post-apply sweeper code check against a fake tofu and a fake az; no credentials
+test/verify-sweeper:
+	$(MISE_EXEC) bash terraform/tests/verify-sweeper.test.sh
+
+.PHONY: test/verify
+## Check scripts/verify.sh (verify/aws, verify/azure) against a fake aws, az, and tofu output: rows, logs, manifest hash, release, exit code; no credentials
+test/verify:
+	$(MISE_EXEC) bash terraform/tests/verify.test.sh
+
+.PHONY: test/sweeper-redeploy
+## Check that a change to the Azure sweeper code changes the planned zip_deploy_file; no credentials
+test/sweeper-redeploy:
+	$(MISE_EXEC) scripts/check-sweeper-redeploy.sh
+
+.PHONY: test/stale-build-artifact
+## Prove a stale dist/ zip cannot reach either stack's build output; no credentials
+test/stale-build-artifact: test/aws test/azure
+	$(MISE_EXEC) scripts/check-stale-build-artifact.sh "$(AWS_TF)" "$(AZURE_TF)"
+
+.PHONY: test/hooks
+## Test the git hooks in a temporary copy of the repo, and check that each run removes its copy
+test/hooks:
+	$(MISE_EXEC) scripts/check-test-hooks-cleanup.sh
+
+.PHONY: test/db
+## Test scripts/build-db.sh on a generated mirror: the row count per probe type equals the deduplicated input; no network, no credentials
+test/db:
+	$(MISE_EXEC) scripts/test-build-db.sh
+
+.PHONY: test/data-sync
+## Test scripts/data-sync.sh against a fake aws, az, and azcopy over a directory store: rows only, newest day and later only; no network, no credentials
+test/data-sync:
+	$(MISE_EXEC) scripts/test-data-sync.sh
+
+.PHONY: test/dev
+## Test make data/sync and scripts/dev.sh against a fake tofu, aws, and make: names read from the deployment outputs and never printed; an expired login gives 1 line; no network
+test/dev:
+	$(MISE_EXEC) scripts/test-dev.sh
+

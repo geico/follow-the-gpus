@@ -1,0 +1,6 @@
+# For tofu test only: the removed `single` placement group mode must fail the plan.
+experiment: ftg-20261016-single-mode
+azure:
+  provisioning_probes:
+    az_vmss_flex:
+      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: single, allow_billable_provisioning: true}

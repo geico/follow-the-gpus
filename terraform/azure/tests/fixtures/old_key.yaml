@@ -1,0 +1,6 @@
+# For tofu test only: the earlier keys `allocation_probes` and `az_allocation` must fail the plan.
+experiment: ftg-20261014-old-key
+azure:
+  cadence: {az_allocation: 2h}
+  allocation_probes:
+    - {sku: Standard_B2s, region: eastus, zone: null, n: 2}

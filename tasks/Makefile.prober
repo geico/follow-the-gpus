@@ -1,0 +1,43 @@
+# Prober targets. The package is in prober/. Each tool runs through mise and uv.
+
+# uv runs in the prober folder. It makes prober/.venv and installs the dev group on first use.
+PROBER_DIR ?= prober
+PROBER_UV ?= $(MISE_EXEC) uv --directory $(PROBER_DIR)
+
+# Where `make prober/sim` writes, and how many hours of history it writes.
+PROBER_SIM_DIR ?= data/sim
+PROBER_SIM_HOURS ?= 24
+PROBER_SIM_SEED ?= 42
+PROBER_CONFIG ?= config/targets.yaml
+
+.PHONY: prober/test
+## Run the prober unit tests with pytest, with the aws and azure extras so the shape and real-SDK tests run (no cloud, no network)
+prober/test:
+	FTG_REQUIRE_CLOUD_EXTRAS=1 $(PROBER_UV) run --extra aws --extra azure pytest
+
+.PHONY: prober/lint
+## Check the prober code with ruff (lint and format)
+prober/lint:
+	$(PROBER_UV) run ruff check .
+	$(PROBER_UV) run ruff format --check .
+
+.PHONY: prober/format
+## Format the prober code with ruff
+prober/format:
+	$(PROBER_UV) run ruff format .
+
+.PHONY: prober/lock
+## Update prober/uv.lock after a dependency change
+prober/lock:
+	$(PROBER_UV) lock
+
+.PHONY: prober/check-config
+## Validate config/targets.yaml (PROBER_CONFIG) with ftg-prober check-config
+prober/check-config:
+	$(PROBER_UV) run ftg-prober check-config $(abspath $(PROBER_CONFIG))
+
+.PHONY: prober/sim
+## Write PROBER_SIM_HOURS hours of synthetic rows for every probe type to data/sim/; the folder must be missing or empty
+prober/sim:
+	$(PROBER_UV) run ftg-prober sim --config $(abspath $(PROBER_CONFIG)) \
+	  --store file://$(abspath $(PROBER_SIM_DIR)) --hours $(PROBER_SIM_HOURS) --seed $(PROBER_SIM_SEED)

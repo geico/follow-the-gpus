@@ -1,0 +1,160 @@
+#cloud-config
+# First boot of the prober VM. Terraform fills the $${...} values.
+#
+# ADR 0012: this file no longer pulls the code or builds the venv itself. It stages
+# /opt/ftg/bin/sync.sh (ADR 0012 section 4) and 2 systemd units, then starts the sync unit once
+# (rule 11); every later code or config change reaches the VM through that same script, on
+# ftg-prober-sync.timer, with no VM replacement and no 2nd code path for the first install.
+package_update: true
+packages:
+  - python3
+  - python3-venv
+  - unzip
+  - curl
+  - jq
+%{~ if egress_proxy_url != "" }
+# Proxy for apt (var.egress_proxy_url). The apt step runs before the sync unit's first start.
+apt:
+  http_proxy: ${egress_proxy_url}
+  https_proxy: ${egress_proxy_url}
+%{~ endif }
+
+write_files:
+  - path: /etc/ftg/env
+    permissions: "0644"
+    content: |
+      FTG_PROBE_RG=${probe_rg}
+      AZURE_SUBSCRIPTION_ID=${subscription_id}
+
+  - path: /etc/ftg/sync-env
+    permissions: "0644"
+    content: |
+      FTG_PROVIDER=azure
+      FTG_CONFIG_FILE=${config_file}
+      FTG_PIP_EXTRA=azure
+
+  - path: /opt/ftg/bin/fetch-blob.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      # Usage: fetch-blob.sh <blob name> <output file>
+      # Gets a token from the instance metadata service and downloads 1 blob from the code
+      # container. Exit 0: fetched. Exit 3: the blob does not exist (HTTP 404, BlobNotFound),
+      # returned at once with no retry, because a sync.sh poll treats this as routine (ADR 0012
+      # section 4, rule 1), not a failure to retry. Exit 1: every other failure, after
+      # FTG_FETCH_ATTEMPTS tries (default 40, 15 s apart, so up to 10 minutes of waits), because
+      # a new role assignment can take minutes to apply. Every curl has --max-time, so one hung
+      # connection cannot stall a try.
+      set -euo pipefail
+      blob="$1"
+      out="$2"
+      token_url='http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fstorage.azure.com%2F'
+      attempts="$${FTG_FETCH_ATTEMPTS:-40}"
+      for attempt in $(seq 1 "$attempts"); do
+        token=$(curl -s --max-time 30 -H Metadata:true "$token_url" | jq -r '.access_token // empty') || token=""
+        if [ -n "$token" ]; then
+          http_code=$(curl -s --max-time 300 -o "$out" -w '%%{http_code}' \
+            -H "Authorization: Bearer $token" -H "x-ms-version: 2021-08-06" \
+            "${blob_endpoint}code/$blob") || http_code=000
+          case "$http_code" in
+            200)
+              echo "fetched $blob"
+              exit 0
+              ;;
+            404)
+              echo "$blob not found" >&2
+              rm -f "$out"
+              exit 3
+              ;;
+          esac
+        else
+          http_code=no-token
+        fi
+        echo "attempt $attempt: $blob not fetched yet (http $http_code)" >&2
+        sleep 15
+      done
+      echo "gave up on $blob" >&2
+      exit 1
+
+  - path: /etc/systemd/system/ftg-prober.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=follow-the-gpus prober (Azure)
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      EnvironmentFile=/etc/ftg/env
+      ExecStart=/opt/ftg/current/venv/bin/ftg-prober run --provider azure --config /opt/ftg/current/config/${config_file} --store ${store_url}
+      Restart=always
+      RestartSec=30
+      # At least as long as the slowest teardown an in-flight probe can need, so sync.sh's
+      # restart (ADR 0012 section 4, rule 6) does not SIGKILL a probe mid-teardown. The Azure
+      # provisioning probes' own worst case (spec 0010, prober/ftg_prober/azure/prechecks.py
+      # DEFAULTS and capacity_reservation.py) is the same shape as aws_odcr:
+      # probe_timeout_seconds (90s) then, on a failure, teardown_timeout_seconds (60s) of
+      # retries: 150s at the default settings. This adds a 30s margin over that sum. A deployer
+      # who raises either setting beyond its default must raise this by at least the same
+      # amount.
+      TimeoutStopSec=180
+      DynamicUser=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /etc/systemd/system/ftg-prober-sync.service
+    permissions: "0644"
+    content: |
+      ${indent(6, sync_service_unit)}
+
+  - path: /etc/systemd/system/ftg-prober-sync.timer
+    permissions: "0644"
+    content: |
+      ${indent(6, sync_timer_unit)}
+%{~ if egress_proxy_url != "" }
+
+  - path: /etc/systemd/system/ftg-prober.service.d/proxy.conf
+    permissions: "0644"
+    content: |
+      [Service]
+      Environment="HTTP_PROXY=${egress_proxy_url}" "HTTPS_PROXY=${egress_proxy_url}" "NO_PROXY=${no_proxy}"
+      Environment="http_proxy=${egress_proxy_url}" "https_proxy=${egress_proxy_url}" "no_proxy=${no_proxy}"
+
+  - path: /etc/systemd/system/ftg-prober-sync.service.d/proxy.conf
+    permissions: "0644"
+    content: |
+      [Service]
+      Environment="HTTP_PROXY=${egress_proxy_url}" "HTTPS_PROXY=${egress_proxy_url}" "NO_PROXY=${no_proxy}"
+      Environment="http_proxy=${egress_proxy_url}" "https_proxy=${egress_proxy_url}" "no_proxy=${no_proxy}"
+%{~ endif }
+
+runcmd:
+  # Directories: sync.sh (root) builds each release under /opt/ftg/releases/ and owns
+  # /opt/ftg/current; ftg-prober.service's DynamicUser gets read and execute only there
+  # (ProtectSystem=strict, systemd.exec(5)), never write (ADR 0012 section 4).
+  - [install, -d, -m, "0755", /opt/ftg/releases]
+  # sync.sh itself (terraform/sync.sh, shared with the AWS stack). It is hash-named (control.tf
+  # local.sync_blob), named by manifest.json's own sync_blob field, so this reads that field
+  # first, the same way sync.sh itself will on every later tick (section 4, self-refresh),
+  # rather than naming a fixed blob here. runcmd runs this directly, outside any systemd unit,
+  # so the proxy (var.egress_proxy_url, control.tf's local.proxy_export_cmd, empty when there is
+  # no proxy) is exported here, the same as every other direct call this boot makes (apt, above).
+  # A 404 on manifest.json is transient while control.tf re-creates the blob, and fetch-blob.sh
+  # exits 3 on it at once, so this retries the whole pair, 10 s apart. The loop is bounded twice:
+  # at most 30 rounds, and no new round after 1800 s (bash $SECONDS) since it started. Each fetch
+  # runs with FTG_FETCH_ATTEMPTS=1, so fetch-blob.sh makes 1 try per call and does not run its own
+  # 10-minute retry inside this one; without that, a non-404 error cost up to 40 x 15 s per call,
+  # 2 calls per round, 30 rounds, about 5 hours. Every curl has a --max-time, so the total is
+  # under 1800 s plus 1 round. If the loop
+  # ends without success this exits 1, so cloud-init shows the failure; the sync unit then also
+  # fails visibly (127) on the missing sync.sh.
+  - [bash, -c, "${proxy_export_cmd}export FTG_FETCH_ATTEMPTS=1; for n in $(seq 1 30); do /opt/ftg/bin/fetch-blob.sh manifest.json /tmp/ftg-manifest.json && sync_blob=$(jq -r .sync_blob /tmp/ftg-manifest.json) && /opt/ftg/bin/fetch-blob.sh $sync_blob /opt/ftg/bin/sync.sh && chmod 0755 /opt/ftg/bin/sync.sh && rm -f /tmp/ftg-manifest.json && exit 0; echo \"first-boot fetch $n/30 failed\" >&2; [ $SECONDS -ge 1800 ] && break; sleep 10; done; exit 1"]
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, ftg-prober-sync.timer]
+  - [systemctl, start, ftg-prober-sync.timer]
+  # rule 11: 1 run now, by hand, not `enable --now` on ftg-prober.service itself. This builds
+  # the first release, gates it, swaps /opt/ftg/current onto it, enables and starts
+  # ftg-prober.service, and health-checks it. --no-block lets cloud-init finish without waiting
+  # out that health-check window.
+  - [systemctl, start, --no-block, ftg-prober-sync.service]

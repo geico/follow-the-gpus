@@ -1,0 +1,5 @@
+experiment: ftg-20261014-route-key
+azure:
+  provisioning_probes:
+    az_vmss_flex:
+      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, route: vmss, allow_billable_provisioning: true}

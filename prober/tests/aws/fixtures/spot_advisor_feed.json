@@ -1,0 +1,187 @@
+{
+  "global_rate": "<10%",
+  "ranges": [
+    {
+      "index": 0,
+      "label": "<5%",
+      "dots": 0,
+      "max": 5
+    },
+    {
+      "index": 1,
+      "label": "5-10%",
+      "dots": 1,
+      "max": 11
+    },
+    {
+      "index": 2,
+      "label": "10-15%",
+      "dots": 2,
+      "max": 16
+    },
+    {
+      "index": 3,
+      "label": "15-20%",
+      "dots": 3,
+      "max": 22
+    },
+    {
+      "index": 4,
+      "label": ">20%",
+      "dots": 4,
+      "max": 100
+    }
+  ],
+  "instance_types": {
+    "m5.4xlarge": {
+      "emr": true,
+      "cores": 16,
+      "ram_gb": 64.0
+    },
+    "g6e.xlarge": {
+      "emr": true,
+      "cores": 4,
+      "ram_gb": 32.0
+    },
+    "g4dn.xlarge": {
+      "emr": true,
+      "cores": 4,
+      "ram_gb": 16.0
+    },
+    "g5.xlarge": {
+      "emr": true,
+      "cores": 4,
+      "ram_gb": 16.0
+    },
+    "g6.xlarge": {
+      "emr": true,
+      "cores": 4,
+      "ram_gb": 16.0
+    },
+    "p5.48xlarge": {
+      "emr": true,
+      "cores": 192,
+      "ram_gb": 2048.0
+    },
+    "p5en.48xlarge": {
+      "emr": false,
+      "cores": 192,
+      "ram_gb": 2048.0
+    },
+    "p6-b200.48xlarge": {
+      "emr": false,
+      "cores": 192,
+      "ram_gb": 2048.0
+    }
+  },
+  "spot_advisor": {
+    "us-east-2": {
+      "Linux": {
+        "g4dn.xlarge": {
+          "s": 67,
+          "r": 1
+        },
+        "g5.xlarge": {
+          "s": 58,
+          "r": 4
+        },
+        "p5.48xlarge": {
+          "s": 74,
+          "r": 2
+        },
+        "p5en.48xlarge": {
+          "s": 76,
+          "r": 1
+        },
+        "p6-b200.48xlarge": {
+          "s": 82,
+          "r": 1
+        },
+        "g6.xlarge": {
+          "s": 67,
+          "r": 2
+        },
+        "g6e.xlarge": {
+          "s": 64,
+          "r": 3
+        },
+        "m5.4xlarge": {
+          "s": 64,
+          "r": 4
+        }
+      }
+    },
+    "us-west-2": {
+      "Linux": {
+        "g6e.xlarge": {
+          "s": 36,
+          "r": 4
+        },
+        "g6.xlarge": {
+          "s": 41,
+          "r": 4
+        },
+        "g5.xlarge": {
+          "s": 46,
+          "r": 4
+        },
+        "p5.48xlarge": {
+          "s": 69,
+          "r": 0
+        },
+        "g4dn.xlarge": {
+          "s": 55,
+          "r": 4
+        },
+        "p5en.48xlarge": {
+          "s": 70,
+          "r": 0
+        },
+        "p6-b200.48xlarge": {
+          "s": 82,
+          "r": 2
+        },
+        "m5.4xlarge": {
+          "s": 60,
+          "r": 3
+        }
+      }
+    },
+    "us-east-1": {
+      "Linux": {
+        "g4dn.xlarge": {
+          "s": 60,
+          "r": 2
+        },
+        "g6.xlarge": {
+          "s": 49,
+          "r": 4
+        },
+        "m5.4xlarge": {
+          "s": 67,
+          "r": 4
+        },
+        "g6e.xlarge": {
+          "s": 50,
+          "r": 4
+        },
+        "p6-b200.48xlarge": {
+          "s": 79,
+          "r": 2
+        },
+        "p5.48xlarge": {
+          "s": 57,
+          "r": 0
+        },
+        "p5en.48xlarge": {
+          "s": 67,
+          "r": 0
+        },
+        "g5.xlarge": {
+          "s": 56,
+          "r": 4
+        }
+      }
+    }
+  }
+}

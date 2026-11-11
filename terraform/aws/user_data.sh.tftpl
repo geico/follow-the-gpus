@@ -1,0 +1,171 @@
+#!/bin/bash
+# First boot of the prober VM. Terraform renders this template (main.tf) and cloud-init runs the
+# result once. The output goes to /var/log/cloud-init-output.log.
+# The file is a Terraform template and valid bash: a literal bash $${x} is written $$${x}.
+#
+# ADR 0012: this script no longer pulls the code or builds the venv itself. It stages
+# /opt/ftg/bin/sync.sh (ADR 0012 section 4) and 2 systemd units, then starts the sync unit once
+# (rule 11); every later code or config change reaches the VM through that same script, on
+# ftg-prober-sync.timer, with no VM replacement and no 2nd code path for the first install.
+set -euo pipefail
+
+REGION="${region}"
+export AWS_DEFAULT_REGION="$REGION"
+export DEBIAN_FRONTEND=noninteractive
+
+# Run a command up to 30 times, 10 s apart. apt and S3 can fail for a short time after boot.
+retry() {
+  local n
+  for n in $(seq 1 30); do
+    if "$@"; then
+      return 0
+    fi
+    echo "retry $n/30: $*" >&2
+    sleep 10
+  done
+  return 1
+}
+
+%{ if proxy_url != "" ~}
+# 0a. The egress proxy. apt reads its own file. The other tools read the environment, which holds
+#     for this script only. The prober unit and the sync unit each get their own drop-in (step 6).
+#     The script writes no system-wide environment file.
+PROXY_URL="${proxy_url}"
+NO_PROXY_LIST="${no_proxy}"
+cat > /etc/apt/apt.conf.d/99proxy <<EOF
+Acquire::http::Proxy "$PROXY_URL";
+Acquire::https::Proxy "$PROXY_URL";
+EOF
+export HTTP_PROXY="$PROXY_URL" HTTPS_PROXY="$PROXY_URL" NO_PROXY="$NO_PROXY_LIST"
+export http_proxy="$PROXY_URL" https_proxy="$PROXY_URL" no_proxy="$NO_PROXY_LIST"
+
+# 0b. The proxy for the SSM agent. On Ubuntu the agent is a snap and runs as its own unit. The unit
+#     does not read the environment of this script. The drop-in is the AWS procedure for a snap.
+#     A failed restart is not fatal: the prober does not need the agent.
+install -d /etc/systemd/system/snap.amazon-ssm-agent.amazon-ssm-agent.service.d
+cat > /etc/systemd/system/snap.amazon-ssm-agent.amazon-ssm-agent.service.d/override.conf <<EOF
+[Service]
+Environment="http_proxy=$PROXY_URL"
+Environment="https_proxy=$PROXY_URL"
+Environment="no_proxy=$NO_PROXY_LIST"
+EOF
+systemctl daemon-reload
+systemctl restart snap.amazon-ssm-agent.amazon-ssm-agent.service || echo "SSM agent restart failed" >&2
+
+%{ endif ~}
+# 1. System packages: unzip for the AWS CLI installer and the code zips, python3-venv for the
+#    virtual environment sync.sh builds, jq for parsing manifest.json.
+#    Ubuntu 24.04 ships Python 3.12 as python3.
+retry apt-get update
+retry apt-get install -y unzip python3-venv jq
+python3 -c 'import sys; assert sys.version_info[:2] >= (3, 12), sys.version'
+
+# 2. AWS CLI v2 from the official installer. The archive name holds the CPU architecture.
+#    sync.sh uses it too (aws s3api get-object), so it must be on PATH before the sync unit runs.
+work=$(mktemp -d)
+retry curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o "$work/awscliv2.zip"
+unzip -q "$work/awscliv2.zip" -d "$work"
+"$work/aws/install"
+rm -rf "$work"
+
+# 3. Directories and the service user. sync.sh (root) builds each release under
+#    /opt/ftg/releases/ and owns /opt/ftg/current; ftg-prober.service runs as the unprivileged
+#    `ftg` user, which gets read and execute only, never write (ADR 0012 section 4).
+install -d -m 0755 /opt/ftg /opt/ftg/bin /opt/ftg/releases /etc/ftg
+id ftg > /dev/null 2>&1 || useradd --system --home-dir /opt/ftg --no-create-home --shell /usr/sbin/nologin ftg
+
+# 4. sync.sh itself (ADR 0012 section 4), 1 file shared with the Azure stack (terraform/sync.sh).
+#    It is hash-named under code/ (main.tf), named by manifest.json's own sync_key field, so
+#    this reads that key first, the same way sync.sh itself will on every later tick (section 4,
+#    self-refresh), rather than naming a fixed key in this user data. EC2 user data has a 16 KiB
+#    limit, too small to embed sync.sh's content, so this fetches it once at first boot.
+work=$(mktemp -d)
+retry aws s3api get-object --bucket ${bucket} --key manifest.json "$work/manifest.json" > /dev/null
+sync_key=$(jq -r .sync_key "$work/manifest.json")
+retry aws s3api get-object --bucket ${bucket} --key "$sync_key" /opt/ftg/bin/sync.sh > /dev/null
+rm -rf "$work"
+chmod 0755 /opt/ftg/bin/sync.sh
+
+# 5. The environment files: /etc/ftg/env for ftg-prober.service, /etc/ftg/sync-env for
+#    ftg-prober-sync.service. The prober reads its own experiment name from the config file
+#    only, never from the environment (ADR 0010 section 11), so a new `experiment:` in a config
+#    update never needs this env file to change.
+cat > /etc/ftg/env <<EOF
+AWS_DEFAULT_REGION=$REGION
+EOF
+chmod 0644 /etc/ftg/env
+
+cat > /etc/ftg/sync-env <<EOF
+FTG_PROVIDER=aws
+FTG_BUCKET=${bucket}
+FTG_CONFIG_FILE=${config_file}
+FTG_PIP_EXTRA=aws
+AWS_DEFAULT_REGION=$REGION
+EOF
+chmod 0644 /etc/ftg/sync-env
+
+# 6. The systemd units. ftg-prober.service's ExecStart names /opt/ftg/current, never a release
+#    path directly, so the unit file itself never changes across a release (ADR 0012 section 4,
+#    rule 5). Exit code 2 is a config error, and a restart does not correct it. The boot script
+#    does not `enable --now` it: sync.sh does, once rule 11's first build passes the gate.
+cat > /etc/systemd/system/ftg-prober.service <<EOF
+[Unit]
+Description=follow-the-gpus prober (AWS)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ftg
+EnvironmentFile=/etc/ftg/env
+ExecStart=/opt/ftg/current/venv/bin/ftg-prober run --provider aws --config /opt/ftg/current/config/${config_file} --store s3://${bucket}/
+Restart=on-failure
+RestartSec=30
+RestartPreventExitStatus=2
+# At least as long as the slowest teardown an in-flight probe can need, so sync.sh's restart
+# (rule 6) does not SIGKILL a probe mid-teardown. aws_odcr's own worst case (spec 0002 section
+# 4.9, prober/ftg_prober/aws/odcr.py DEFAULTS) is probe_timeout_seconds (90s) to find out
+# whether a create placed enough instances, then, on a failure, teardown_timeout_seconds (60s)
+# of cancel retries: 150s at the default settings, not "well under 90s". This adds a 30s margin
+# over that sum. A deployer who raises either setting beyond its default for aws_odcr must raise
+# this by at least the same amount.
+TimeoutStopSec=180
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > /etc/systemd/system/ftg-prober-sync.service <<'FTG_SYNC_SERVICE_EOF'
+${sync_service_unit}
+FTG_SYNC_SERVICE_EOF
+
+cat > /etc/systemd/system/ftg-prober-sync.timer <<'FTG_SYNC_TIMER_EOF'
+${sync_timer_unit}
+FTG_SYNC_TIMER_EOF
+
+%{ if proxy_url != "" ~}
+# The proxy variables for both units. Neither reads the environment of this script.
+install -d /etc/systemd/system/ftg-prober.service.d /etc/systemd/system/ftg-prober-sync.service.d
+cat > /etc/systemd/system/ftg-prober.service.d/proxy.conf <<EOF
+[Service]
+Environment="HTTP_PROXY=$PROXY_URL" "HTTPS_PROXY=$PROXY_URL" "NO_PROXY=$NO_PROXY_LIST"
+Environment="http_proxy=$PROXY_URL" "https_proxy=$PROXY_URL" "no_proxy=$NO_PROXY_LIST"
+EOF
+cat > /etc/systemd/system/ftg-prober-sync.service.d/proxy.conf <<EOF
+[Service]
+Environment="HTTP_PROXY=$PROXY_URL" "HTTPS_PROXY=$PROXY_URL" "NO_PROXY=$NO_PROXY_LIST"
+Environment="http_proxy=$PROXY_URL" "https_proxy=$PROXY_URL" "no_proxy=$NO_PROXY_LIST"
+EOF
+%{ endif ~}
+
+# 7. Enable the timer and start the sync unit once (rule 11): this first run builds the first
+#    release, gates it, swaps /opt/ftg/current onto it, enables and starts ftg-prober.service
+#    itself, and health-checks it. --no-block lets this boot script finish without waiting out
+#    that health-check window.
+systemctl daemon-reload
+systemctl enable ftg-prober-sync.timer
+systemctl start ftg-prober-sync.timer
+systemctl start --no-block ftg-prober-sync.service
+echo "ftg bootstrap done"

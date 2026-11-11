@@ -1,0 +1,35 @@
+# Dev project for the sweeper. The Function App runtime installs requirements.txt, not this file.
+# The runtime pins below must match requirements.txt. A test checks that.
+[project]
+name = "ftg-sweeper"
+version = "0.1.0"
+description = "Timer-triggered Azure Function that deletes probe resources older than a threshold."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "azure-functions==1.25.0",
+    "azure-identity==1.26.0",
+    "azure-mgmt-compute==38.4.0",
+    "azure-mgmt-resource==26.0.0",
+    "azure-mgmt-resourcegraph==8.0.1",
+    "azure-storage-blob==12.31.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

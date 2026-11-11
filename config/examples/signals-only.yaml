@@ -1,0 +1,25 @@
+# Example: signal probes only. These calls read public or free data and spend no money.
+# They create no capacity. Use `experiment` as the name of your run; pick your own.
+experiment: ftg-20260101-signals-example
+aws:
+  modules:
+    aws_spot_score:
+      type: aws_spot_score
+      spot_score_requests:
+        - {name: g5, instance_types: [g5.xlarge], label: "Spot score, 1x A10G"}
+        - {name: g6e, instance_types: [g6e.xlarge], label: "Spot score, 1x L40S"}
+  jobs:
+    - {module: aws_spot_score, regions: [us-east-1, us-west-2], interval: 5m}
+    - {module: aws_spot_price, regions: [us-east-1, us-west-2], interval: 5m}
+    - {module: aws_spot_advisor, regions: [us-east-1, us-west-2], interval: 24h}
+azure:
+  modules:
+    az_spot_score:
+      type: az_spot_score
+      spot_sizes: [Standard_NC24ads_A100_v4, Standard_NV36ads_A10_v5]
+    az_spot:
+      type: az_spot
+      spot_sizes: [Standard_NC24ads_A100_v4, Standard_NV36ads_A10_v5]
+  jobs:
+    - {module: az_spot_score, regions: [eastus, westus2], interval: 15m}
+    - {module: az_spot, regions: [eastus, westus2], interval: 5m}

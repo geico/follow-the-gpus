@@ -1,0 +1,9 @@
+# Targets file for the sweeper Region tests (spec 0013 section 4): the Regions come from every
+# aws job's regions and every aws.provisioning_probes entry's region, plus the stack's Region.
+experiment: ftg-20261015-sweeper
+aws:
+  jobs:
+    - {module: aws_spot_price, regions: [us-west-2, us-east-1]}
+  provisioning_probes:
+    - {instance_type: m5.large, region: eu-west-1, n: 2, simulate: true}
+    - {instance_type: m5.large, region: us-west-2, n: 2, simulate: true}

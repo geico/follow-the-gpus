@@ -1,0 +1,38 @@
+# Quota targets: GPU quota requests from azure.quota and aws.quota in config/targets.yaml.
+# The specs are spec/0011 (Azure) and spec/0012 (AWS).
+# The code is in preflight/ftg_preflight/quota.py. The default is a dry run.
+# Exit 0: done. Exit 1: a read or a request failed. Exit 2: a config, login, or extension error.
+# quota/status only reads: the quota requests and the support tickets (az support extension).
+
+# The cloud login is your own: aws or az, with the standard AWS_* and ARM_* variables.
+# TARGETS_FILE is the experiment file (default config/targets.yaml, in tasks/Makefile.preflight).
+# Set QUOTA_ARGS=--apply to send the requests. Other flags: --subscription, --require-vnet,
+# --install-extension.
+
+QUOTA_ARGS ?=
+
+.PHONY: quota/azure
+## Print the Azure GPU quota requests of config/targets.yaml (dry run); QUOTA_ARGS=--apply sends them
+quota/azure:
+	@$(PREFLIGHT_UV) python -m ftg_preflight.quota --config "$(abspath $(TARGETS_FILE))" $(QUOTA_ARGS)
+
+# AWS quota: On-Demand and Spot requests from aws.quota (spec/0012). Dry run by default.
+# QUOTA_ARGS=--apply also sends the AWS requests.
+.PHONY: quota/aws
+## Print the AWS GPU quota requests (On-Demand and Spot) of config/targets.yaml (dry run); QUOTA_ARGS=--apply sends them
+quota/aws:
+	@$(PREFLIGHT_UV) python -m ftg_preflight.quota_aws --config "$(abspath $(TARGETS_FILE))" $(QUOTA_ARGS)
+
+# Flags of the status command, for example --format json or --top 50.
+QUOTA_STATUS_ARGS ?=
+
+# The @ keeps the command line out of stdout, so that the JSON or Markdown output stays clean.
+.PHONY: quota/status
+## List the recent Azure quota requests and their support tickets (read-only); QUOTA_STATUS_ARGS="--format json"
+quota/status:
+	@$(PREFLIGHT_UV) python -m ftg_preflight.quota status --config "$(abspath $(TARGETS_FILE))" $(QUOTA_STATUS_ARGS)
+
+.PHONY: quota/status/md
+## Same as quota/status, as Markdown grouped by region (read-only)
+quota/status/md:
+	@$(PREFLIGHT_UV) python -m ftg_preflight.quota status --config "$(abspath $(TARGETS_FILE))" --format markdown $(QUOTA_STATUS_ARGS)

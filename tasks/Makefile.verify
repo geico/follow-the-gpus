@@ -1,0 +1,25 @@
+# Post-apply proof targets. They only read.
+# The cloud CLI uses your own login. The names of the store, the VM, and the experiment come from
+# `tofu output -raw`.
+# APPLY_END_UTC (optional, YYYY-MM-DDTHH:MM:SSZ) is the end time of the apply, for verify/azure-sweeper.
+
+APPLY_END_UTC ?=
+export APPLY_END_UTC
+
+.PHONY: verify/aws
+## Post-apply proof: newest row and log, store manifest sha256, running release and service on the VM; exit 1 unless release = manifest hash and service active (reads over SSM)
+verify/aws:
+	$(MISE_EXEC) scripts/verify.sh aws
+
+.PHONY: verify/azure
+## Post-apply proof for Azure (as verify/aws, over az vm run-command), then verify/azure-sweeper; exit 1 if either fails
+verify/azure:
+	@rc=0; \
+	$(MISE_EXEC) scripts/verify.sh azure || rc=1; \
+	$(MAKE) --no-print-directory verify/azure-sweeper || rc=1; \
+	exit $$rc
+
+.PHONY: verify/azure-sweeper
+## Post-apply check: fail unless the running sweeper logs the code hash that state holds; waits up to FTG_VERIFY_WAIT_SECONDS (600); APPLY_END_UTC (YYYY-MM-DDTHH:MM:SSZ) also needs a log newer than the apply; exit 2 = unknown, rerun
+verify/azure-sweeper:
+	$(MISE_EXEC) terraform/azure/scripts/verify-sweeper.sh

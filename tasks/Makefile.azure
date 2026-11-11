@@ -1,0 +1,55 @@
+# Azure stack targets. OpenTofu runs through mise. The spec is spec/0005-azure-stack-spec.md.
+# The settings are in terraform/azure/terraform.tfvars (copy terraform.tfvars.example). The state
+# is local unless terraform/azure/backend.hcl exists. The az login gives the credentials.
+# Set AUTO_APPROVE=1 to skip the confirmation prompt of deploy/azure and destroy/azure.
+
+AZURE_TF_DIR ?= terraform/azure
+AZURE_TF ?= $(MISE_EXEC) tofu -chdir=$(AZURE_TF_DIR)
+AUTO_APPROVE ?=
+AZURE_TF_APPROVE ?= $(if $(filter 1,$(AUTO_APPROVE)),-auto-approve,)
+AZURE_TF_INIT = $(AZURE_TF) init -input=false $(if $(wildcard $(AZURE_TF_DIR)/backend.hcl),-backend-config=backend.hcl)
+AZURE_TFVARS = @test -f $(AZURE_TF_DIR)/terraform.tfvars || { echo "copy $(AZURE_TF_DIR)/terraform.tfvars.example to $(AZURE_TF_DIR)/terraform.tfvars and put in your values" >&2; exit 2; }
+
+.PHONY: plan/azure
+## Plan the Azure stack into terraform/azure/tfplan; read the plan, then run apply/azure
+plan/azure:
+	$(AZURE_TFVARS)
+	$(AZURE_TF_INIT)
+	$(AZURE_TF) plan -input=false -out=tfplan
+
+.PHONY: apply/azure
+## Apply the saved plan terraform/azure/tfplan, and nothing else
+apply/azure:
+	$(AZURE_TFVARS)
+	$(AZURE_TF) apply -input=false tfplan
+
+.PHONY: deploy/azure
+## Deploy the Azure stack: tofu init and apply (AUTO_APPROVE=1 skips the prompt)
+deploy/azure:
+	$(AZURE_TFVARS)
+	$(AZURE_TF_INIT)
+	$(AZURE_TF) apply -input=false $(AZURE_TF_APPROVE)
+
+.PHONY: destroy/azure
+## WARNING!!! Destroy the Azure stack. The resource group must hold 0 allocation VMs first (AUTO_APPROVE=1 skips the prompt)
+destroy/azure:
+	$(AZURE_TF_INIT)
+	$(AZURE_TF) destroy -input=false $(AZURE_TF_APPROVE)
+
+.PHONY: status/azure
+## Show the prober VM power state, the sweeper state, and the newest 5 data blobs
+status/azure:
+	$(MISE_EXEC) $(AZURE_TF_DIR)/scripts/status.sh $(AZURE_TF_DIR)
+
+.PHONY: lint/azure
+## Check the Azure stack: tofu fmt -check -recursive and tofu validate
+lint/azure:
+	$(AZURE_TF) fmt -check -recursive
+	$(AZURE_TF) init -backend=false -input=false >/dev/null
+	$(AZURE_TF) validate
+
+.PHONY: test/azure
+## Test the targets file to resource mapping with mock providers (no credentials)
+test/azure:
+	$(AZURE_TF) init -backend=false -input=false >/dev/null
+	$(AZURE_TF) test

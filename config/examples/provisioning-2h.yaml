@@ -1,0 +1,45 @@
+# Example: 2-hour provisioning probes, on top of the signal probes.
+# A provisioning probe asks the cloud for real capacity and gives it back at once. A real probe
+# costs money. Every entry below has `simulate: true`, so a copy of this file creates nothing.
+#
+# To run an entry for real you must turn on 2 keys. Both spend money:
+#   1. In terraform/<cloud>/terraform.tfvars: `grant_billable_provisioning = true` (the stack key).
+#   2. In this file, on the entry: delete `simulate: true` and add `allow_billable_provisioning: true`.
+# Check your quota and the price first. Start with one entry.
+experiment: ftg-20260101-provisioning-2h-example
+aws:
+  modules:
+    aws_spot_score:
+      type: aws_spot_score
+      spot_score_requests:
+        - {name: g5, instance_types: [g5.xlarge], label: "Spot score, 1x A10G"}
+  jobs:
+    - {module: aws_spot_score, regions: [us-east-1], interval: 5m}
+    - {module: aws_spot_price, regions: [us-east-1], interval: 5m}
+  # How often the aws_odcr probe runs: 2h.
+  cadence: {aws_odcr: 2h}
+  provisioning_probes:
+    # A cheap control type first. It proves the path.
+    - {instance_type: m5.large, region: us-east-1, n: 2, simulate: true}
+    - {instance_type: g5.xlarge, region: us-east-1, n: 2, simulate: true}
+    # Real form of the g5 entry. Use it in place of the g5 line above, not next to it:
+    # - {instance_type: g5.xlarge, region: us-east-1, n: 2, allow_billable_provisioning: true}
+azure:
+  modules:
+    az_spot_score:
+      type: az_spot_score
+      spot_sizes: [Standard_NV36ads_A10_v5]
+    az_spot:
+      type: az_spot
+      spot_sizes: [Standard_NV36ads_A10_v5]
+  jobs:
+    - {module: az_spot_score, regions: [eastus], interval: 15m}
+    - {module: az_spot, regions: [eastus], interval: 5m}
+  # How often the Azure pre-check and both provisioning probes run: 2h.
+  cadence: {az_provisioning: 2h}
+  provisioning_probes:
+    az_capacity_reservation:
+      - {sku: Standard_NV36ads_A10_v5, region: eastus, zone: null, n: 2, placement_group_mode: multi, simulate: true}
+    az_vmss_flex:
+      - {sku: Standard_NV36ads_A10_v5, region: eastus, zone: null, n: 2, placement_group_mode: multi, simulate: true}
+  # Real form of an entry: delete `simulate: true`, add `allow_billable_provisioning: true`.

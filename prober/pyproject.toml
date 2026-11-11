@@ -1,0 +1,52 @@
+[project]
+name = "ftg-prober"
+version = "0.1.0"
+description = "Prober core for the GPU capacity tracker: config, records, storage, scheduler, run modes."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+    "zstandard==0.25.0",
+]
+
+[project.optional-dependencies]
+aws = [
+    "boto3>=1.35",
+    "requests>=2.32",
+]
+azure = [
+    "azure-identity>=1.19",
+    "azure-mgmt-compute>=33.0",
+    "azure-mgmt-resource>=26.0",
+    "azure-mgmt-resourcegraph>=8.0",
+    "azure-storage-blob>=12.24",
+    "requests>=2.32",
+]
+
+[project.scripts]
+ftg-prober = "ftg_prober.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==8.4.2",
+    "ruff==0.14.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

@@ -1,0 +1,35 @@
+# Preflight targets: read-only checks before you apply a stack. The code is in preflight/.
+# The specs are spec/0004 section 12 (AWS) and spec/0005 section 11 (Azure).
+# Exit 0: no gap. Exit 1: a gap blocks the apply. Exit 2: the inputs cannot be read.
+# The checks read the stack variables from terraform/<cloud>/terraform.tfvars with tofu, and use
+# your own cloud login.
+
+PREFLIGHT_DIR ?= preflight
+PREFLIGHT_UV ?= $(MISE_EXEC) uv --directory $(PREFLIGHT_DIR) run --locked
+PREFLIGHT_AWS_TF_DIR ?= terraform/aws
+PREFLIGHT_AZURE_TF_DIR ?= terraform/azure
+# The experiment file for quota/* and probes/*.
+TARGETS_FILE ?= config/targets.yaml
+
+.PHONY: preflight/aws
+## Check the AWS account before apply/aws: inputs, credentials, rights, VPC and subnet, VM quota, signal access
+preflight/aws:
+	$(MISE_EXEC) tofu -chdir=$(PREFLIGHT_AWS_TF_DIR) init -input=false $(if $(wildcard $(PREFLIGHT_AWS_TF_DIR)/backend.hcl),-backend-config=backend.hcl) >/dev/null
+	$(PREFLIGHT_UV) python -m ftg_preflight aws --tf-dir $(abspath $(PREFLIGHT_AWS_TF_DIR))
+
+.PHONY: preflight/azure
+## Check the Azure subscription before apply/azure: inputs, login, providers, roles, group and subnet, quotas, signals
+preflight/azure:
+	$(MISE_EXEC) tofu -chdir=$(PREFLIGHT_AZURE_TF_DIR) init -input=false $(if $(wildcard $(PREFLIGHT_AZURE_TF_DIR)/backend.hcl),-backend-config=backend.hcl) >/dev/null
+	$(PREFLIGHT_UV) python -m ftg_preflight azure --tf-dir $(abspath $(PREFLIGHT_AZURE_TF_DIR))
+
+.PHONY: preflight/test
+## Run the preflight unit tests with recorded responses; no network and no cloud credentials
+preflight/test:
+	$(PREFLIGHT_UV) pytest
+
+.PHONY: preflight/lint
+## Check the preflight code with ruff: lint rules and format
+preflight/lint:
+	$(PREFLIGHT_UV) ruff check .
+	$(PREFLIGHT_UV) ruff format --check .

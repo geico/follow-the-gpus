@@ -1,0 +1,29 @@
+# The probes of the active experiment: a Markdown table with the last store row of each, and a
+# summary per provider. The code is in preflight/ftg_preflight/probes.py. Read-only: the targets
+# file and the store. It calls no cloud API for capacity or quota.
+# TARGETS_FILE is the experiment file (default config/targets.yaml). The store names are the
+# stack outputs bucket_name (aws) and data_storage_account (azure), read with `tofu output -raw`.
+# A cloud with no deployment has no output; its "Last row" column shows "-".
+# OUT=<file> also writes the output to a file. PROBES_DAYS is how many UTC days of store rows to read.
+
+PROBES_DAYS ?= 3
+# Sets b and a to the store names. They stay empty when a cloud has no deployment. A state with no
+# outputs prints a warning on stdout, so a value with white space is not a name.
+PROBES_STORES_SH = b=$$($(AWS_TF) output -no-color -raw bucket_name 2>/dev/null); \
+  a=$$($(AZURE_TF) output -no-color -raw data_storage_account 2>/dev/null); \
+  case "$$b" in *[[:space:]]*) b= ;; esac; case "$$a" in *[[:space:]]*) a= ;; esac
+PROBES_ARGS = --aws-config "$(abspath $(TARGETS_FILE))" --azure-config "$(abspath $(TARGETS_FILE))" --days $(PROBES_DAYS) \
+  $${b:+--aws-store s3://$$b} $${a:+--azure-store az://$$a/data} \
+  $(if $(OUT),--out $(abspath $(OUT)))
+
+.PHONY: probes/status
+## Print a Markdown table of the probes of the active experiment (signal and provisioning): real or simulated, cadence, last store row; a summary per provider (read-only)
+probes/status:
+	@$(PROBES_STORES_SH); \
+	$(PREFLIGHT_UV) python -m ftg_preflight.probes $(PROBES_ARGS)
+
+.PHONY: probes/spend
+## Print a daily spend estimate of the real provisioning probes from the store rows and the public list prices: per day and cloud, per probe, total (read-only)
+probes/spend:
+	@$(PROBES_STORES_SH); \
+	$(PREFLIGHT_UV) python -m ftg_preflight.spend $(PROBES_ARGS)

@@ -1,0 +1,31 @@
+[Unit]
+Description=follow-the-gpus prober sync (ADR 0012)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# The longest honest tick: a forward health window and a rollback health window (900 s each,
+# HEALTH_CAP_S in sync.sh) plus 1800 s for the downloads, the venv, and pip install. A hang
+# past this ends the run; the timeout kills the whole cgroup, so the revert below is an
+# ExecStopPost, which systemd runs after the kill, not a step inside ExecStart.
+TimeoutStartSec=3600
+# A self-updated sync.sh leaves /etc/ftg/sync.trial until a run of it gets past self-refresh.
+# ExecStartPre copies the file as it stands at the start of this run; a run that started with a
+# trial copy and still has the same file at the end exited without proving itself.
+ExecStartPre=/bin/bash -c 'if test -f /etc/ftg/sync.trial; then cp -p /etc/ftg/sync.trial /etc/ftg/sync.trial.start; else rm -f /etc/ftg/sync.trial.start; fi'
+# A missing sync.sh makes bash exit 127, a visible failure.
+ExecStart=/opt/ftg/bin/sync.sh
+# EXIT_CODE is killed after a stop or a reboot (systemd.service(5)): that reverts nothing.
+# A stop or a reboot ends a Type=oneshot main process with SIGTERM, and systemd counts that as clean
+# only for a daemon (exit-status.c, is_clean_exit): ExecStopPost sees SERVICE_RESULT=signal,
+# EXIT_CODE=killed, EXIT_STATUS=TERM (systemd.service(5)). So a signal result reverts only when
+# EXIT_STATUS is not TERM, INT, or HUP; KILL, SEGV, ABRT and the like revert, as do timeout,
+# core-dump, oom-kill and watchdog. Known limit: a stop that systemd escalates to SIGKILL after
+# TimeoutStopSec reads as a kill and reverts.
+# Revert when a trial copy fails, is killed, times out, or exits 0 without removing the trial file (spec 0003
+# section 6A): blacklist its hash in sync.failed, put sync.sh.prev back, remove sync.trial. When
+# sync.sh.prev is missing or the copy fails, print the failure. Both end in exit 1, so a trial
+# that exited 0 without proving itself still shows the unit as failed. systemd expands a dollar
+# sign and a percent sign in these lines: $$ writes a dollar sign, and no percent sign appears.
+ExecStopPost=/bin/bash -c 'if test -f /etc/ftg/sync.trial && { case "$$SERVICE_RESULT" in timeout|core-dump|oom-kill|watchdog) true;; signal) case "$$EXIT_STATUS" in TERM|INT|HUP) false;; *) true;; esac;; *) test "$$EXIT_CODE" = exited && { test "$$SERVICE_RESULT" != success || cmp -s /etc/ftg/sync.trial /etc/ftg/sync.trial.start; };; esac; }; then cat /etc/ftg/sync.trial >>/etc/ftg/sync.failed; rm -f /etc/ftg/sync.trial; if test -f /opt/ftg/bin/sync.sh.prev && cp -p /opt/ftg/bin/sync.sh.prev /opt/ftg/bin/.sync.sh.revert && mv /opt/ftg/bin/.sync.sh.revert /opt/ftg/bin/sync.sh; then echo "sync.sh: sync.self_update_reverted"; exit 1; else echo "sync.sh: sync.self_update_revert_failed: sync.sh.prev is missing or could not be restored"; exit 1; fi; fi'

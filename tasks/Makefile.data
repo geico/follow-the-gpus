@@ -1,0 +1,52 @@
+# Data mirror targets: copy each provider's object store's rows to a local folder for offline
+# reading, so the dashboard (tasks/Makefile.web) can read data/live/ with no cloud round trip.
+# The spec is spec/0006-dashboard-spec.md, section 4. data/ is git-ignored (.gitignore).
+# data/sync reads the bucket and storage account names from the stack outputs
+# (`tofu output -raw bucket_name` and `data_storage_account`); you type no name. Rows only: the logs prefix (`experiment=<name>/logs/`) is not
+# copied (spec 0006, section 4.3). A run fetches only the newest local day of each probe type and
+# later days (scripts/data-sync.sh). The old `run_mode=*` rows are read the same way; drop that
+# prefix from the script when it is deleted.
+
+AWS_DATA_BUCKET ?=
+AZURE_DATA_ACCOUNT ?=
+DATA_DIR ?= data/live
+# The clouds that data/sync reads. scripts/dev.sh drops aws when the AWS login is expired.
+DATA_CLOUDS ?= aws azure
+
+.PHONY: data/sync/aws
+## Mirror the AWS data bucket's new rows to data/live/aws/ (no logs); set AWS_DATA_BUCKET
+data/sync/aws:
+	@AWS_DATA_BUCKET="$(AWS_DATA_BUCKET)" DATA_DIR="$(DATA_DIR)" scripts/data-sync.sh aws
+
+.PHONY: data/sync/azure
+## Mirror the Azure data container's new rows to data/live/azure/ (no logs); set AZURE_DATA_ACCOUNT
+data/sync/azure:
+	@AZURE_DATA_ACCOUNT="$(AZURE_DATA_ACCOUNT)" DATA_DIR="$(DATA_DIR)" $(MISE_EXEC) scripts/data-sync.sh azure
+
+.PHONY: data/sync
+## Mirror the new rows of each deployed cloud's data store to data/live/, at the same time; names come from the stack outputs; skips a cloud with no deployment; fails with none
+data/sync:
+	@t=""; vars=""; \
+	for c in $(DATA_CLOUDS); do \
+	  if [ "$$c" = aws ]; then o=bucket_name; v=AWS_DATA_BUCKET; tf='$(AWS_TF)'; else o=data_storage_account; v=AZURE_DATA_ACCOUNT; tf='$(AZURE_TF)'; fi; \
+	  n=$$($$tf output -no-color -raw $$o 2>/dev/null); \
+	  case "$$n" in "" | *[[:space:]]*) echo "data/sync: skipping $$c: no $$o output in terraform/$$c (not applied)"; continue ;; esac; \
+	  t="$$t data/sync/$$c"; vars="$$vars $$v=$$n"; \
+	done; \
+	if [ -z "$$t" ]; then echo "data/sync: no cloud is deployed; run make plan/aws and make apply/aws, or the same for azure" >&2; exit 2; fi; \
+	$(MAKE) -j2 $$t $$vars
+
+# The default mirror is data/live of the main checkout, so that a worktree reads it too. Outside a git checkout, it is data/live of this folder.
+DB_MIRROR ?= $(shell g=$$(git rev-parse --git-common-dir 2>/dev/null) && cd "$$g/.." && pwd || echo "$(CURDIR)")/data/live
+ROWS_DIR ?= $(CURDIR)/data/rows
+DB_FILE ?= $(CURDIR)/data/ftg.duckdb
+
+.PHONY: data/rows
+## Write 1 gzipped JSONL file per UTC day, provider, and probe type from the mirror DB_MIRROR into ROWS_DIR; rebuilds only changed days; git-ignored
+data/rows:
+	@s=$$(date +%s); $(MISE_EXEC) scripts/compact-rows.sh "$(DB_MIRROR)" "$(ROWS_DIR)" || exit 1; echo "data/rows: $$(( $$(date +%s) - s )) s"
+
+.PHONY: data/db
+## Build the full-resolution DuckDB file DB_FILE from the daily files of data/rows: every row, no bucketing, no scrub; git-ignored
+data/db: data/rows
+	@s=$$(date +%s); $(MISE_EXEC) scripts/build-db.sh "$(ROWS_DIR)" "$(DB_FILE)" || exit 1; echo "data/db: $$(( $$(date +%s) - s )) s"

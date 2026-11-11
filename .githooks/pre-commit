@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Blocks a commit that holds a bad spec file name,
+# Markdown style faults, or broken local links. See CONTRIBUTING.md.
+set -u
+root=$(git rev-parse --show-toplevel)
+. "$root/scripts/lib.sh"
+
+fail=0
+md=()
+while IFS= read -r -d '' p; do
+  case "$p" in
+    spec/README.md) ;;
+    spec/*)
+      if ! printf '%s\n' "$p" | grep -Eq '^spec/[0-9]{4}-[a-z0-9-]+\.md$'; then
+        echo "pre-commit: $p must have a name like spec/NNNN-<slug>.md. Use the next free number." >&2
+        fail=1
+      fi
+      ;;
+  esac
+  case "$p" in
+    *.md) md+=("$p") ;;
+  esac
+done < <(git diff --cached --name-only -z --diff-filter=ACMR)
+if [ "${#md[@]}" -gt 0 ]; then
+  ftg_check markdownlint markdownlint-cli2 "${md[@]}" || fail=1
+  ftg_check "link check" lychee --offline --no-progress "${md[@]}" || fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "pre-commit: blocked. Correct the items above, then commit again." >&2
+fi
+exit "$fail"

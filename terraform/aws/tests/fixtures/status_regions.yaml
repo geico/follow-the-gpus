@@ -1,0 +1,11 @@
+# A targets file for the outputs test: the experiment and the Regions come from here.
+experiment: ftg-status-fixture
+aws:
+  jobs:
+    - {module: aws_spot_price, regions: [us-west-2, us-east-2], interval: 5m}
+    - {module: aws_spot_score, interval: 5m}
+  provisioning_probes:
+    - {instance_type: m5.large, region: eu-west-1, n: 2, simulate: true}
+    - {instance_type: m5.large, n: 2, simulate: true}
+  quota:
+    regions: [us-east-2, ap-south-1]

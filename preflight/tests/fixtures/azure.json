@@ -1,0 +1,834 @@
+{
+  "_note": "Output in the shape of the az CLI (-o json). IDs are not GUIDs on purpose. The SKU lists are the value arrays of the Resource SKUs REST response; the test fake wraps each in a page.",
+  "account": {
+    "id": "test-subscription",
+    "name": "Test subscription",
+    "state": "Enabled",
+    "tenantId": "test-tenant",
+    "user": {
+      "name": "dev@example.com",
+      "type": "user"
+    }
+  },
+  "providers": [
+    {
+      "namespace": "Microsoft.Compute",
+      "registrationState": "Registered"
+    },
+    {
+      "namespace": "Microsoft.Network",
+      "registrationState": "Registered"
+    },
+    {
+      "namespace": "Microsoft.Storage",
+      "registrationState": "Registered"
+    },
+    {
+      "namespace": "Microsoft.Web",
+      "registrationState": "NotRegistered"
+    },
+    {
+      "namespace": "microsoft.insights",
+      "registrationState": "Registered"
+    },
+    {
+      "namespace": "Microsoft.OperationalInsights",
+      "registrationState": "Registered"
+    },
+    {
+      "namespace": "Microsoft.ManagedIdentity",
+      "registrationState": "Registered"
+    },
+    {
+      "namespace": "Microsoft.Consumption",
+      "registrationState": "NotRegistered"
+    },
+    {
+      "namespace": "Microsoft.Quota",
+      "registrationState": "Registered"
+    }
+  ],
+  "role_definitions": [
+    {
+      "id": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/owner-id",
+      "name": "owner-id",
+      "roleName": "Owner",
+      "permissions": [
+        {
+          "actions": [
+            "*"
+          ],
+          "notActions": [],
+          "dataActions": [],
+          "notDataActions": []
+        }
+      ]
+    },
+    {
+      "id": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/contributor-id",
+      "name": "contributor-id",
+      "roleName": "Contributor",
+      "permissions": [
+        {
+          "actions": [
+            "*"
+          ],
+          "notActions": [
+            "Microsoft.Authorization/*/Delete",
+            "Microsoft.Authorization/*/Write",
+            "Microsoft.Authorization/elevateAccess/Action",
+            "Microsoft.Blueprint/blueprintAssignments/write",
+            "Microsoft.Blueprint/blueprintAssignments/delete",
+            "Microsoft.Compute/galleries/share/action",
+            "Microsoft.Purview/consents/write",
+            "Microsoft.Purview/consents/delete",
+            "Microsoft.Resources/deploymentStacks/manageDenySetting/action",
+            "Microsoft.Subscription/cancel/action",
+            "Microsoft.Subscription/enable/action"
+          ],
+          "dataActions": [],
+          "notDataActions": []
+        }
+      ]
+    },
+    {
+      "id": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/uaa-id",
+      "name": "uaa-id",
+      "roleName": "User Access Administrator",
+      "permissions": [
+        {
+          "actions": [
+            "*/read",
+            "Microsoft.Authorization/*",
+            "Microsoft.Support/*"
+          ],
+          "notActions": [],
+          "dataActions": [],
+          "notDataActions": []
+        }
+      ]
+    },
+    {
+      "id": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/reader-id",
+      "name": "reader-id",
+      "roleName": "Reader",
+      "permissions": [
+        {
+          "actions": [
+            "*/read"
+          ],
+          "notActions": [],
+          "dataActions": [],
+          "notDataActions": []
+        }
+      ]
+    }
+  ],
+  "assignments_contributor": [
+    {
+      "principalName": "dev@example.com",
+      "roleDefinitionId": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/contributor-id",
+      "roleDefinitionName": "Contributor",
+      "scope": "/subscriptions/test-subscription",
+      "condition": null
+    }
+  ],
+  "assignments_contributor_uaa": [
+    {
+      "principalName": "dev@example.com",
+      "roleDefinitionId": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/contributor-id",
+      "roleDefinitionName": "Contributor",
+      "scope": "/subscriptions/test-subscription",
+      "condition": null
+    },
+    {
+      "principalName": "ops-group",
+      "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/uaa-id",
+      "roleDefinitionName": "User Access Administrator",
+      "scope": "/providers/Microsoft.Management/managementGroups/test-group",
+      "condition": null
+    }
+  ],
+  "assignments_owner_with_condition": [
+    {
+      "principalName": "dev@example.com",
+      "roleDefinitionId": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/owner-id",
+      "roleDefinitionName": "Owner",
+      "scope": "/subscriptions/test-subscription",
+      "condition": "((!(ActionMatches{'Microsoft.Authorization/roleAssignments/write'})))"
+    }
+  ],
+  "skus_eastus": [
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_B2ats_v2",
+      "family": "standardBasv2Family",
+      "locations": [
+        "eastus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "2"
+        },
+        {
+          "name": "MemoryGB",
+          "value": "1"
+        }
+      ],
+      "restrictions": []
+    },
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_B2s",
+      "family": "standardBSFamily",
+      "locations": [
+        "eastus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "2"
+        }
+      ],
+      "restrictions": [
+        {
+          "type": "Location",
+          "values": [
+            "eastus"
+          ],
+          "restrictionInfo": {
+            "locations": [
+              "eastus"
+            ],
+            "zones": null
+          },
+          "reasonCode": "NotAvailableForSubscription"
+        }
+      ]
+    },
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_D2as_v4",
+      "family": "standardDASv4Family",
+      "locations": [
+        "eastus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "2"
+        },
+        {
+          "name": "CapacityReservationSupported",
+          "value": "True"
+        }
+      ],
+      "restrictions": [
+        {
+          "type": "Zone",
+          "values": [
+            "eastus"
+          ],
+          "restrictionInfo": {
+            "locations": [
+              "eastus"
+            ],
+            "zones": [
+              "3"
+            ]
+          },
+          "reasonCode": "NotAvailableForSubscription"
+        }
+      ]
+    },
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_ND96isr_H100_v5",
+      "family": "standardNDSH100v5Family",
+      "locations": [
+        "eastus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "96"
+        }
+      ],
+      "restrictions": [
+        {
+          "type": "Location",
+          "values": [
+            "eastus"
+          ],
+          "restrictionInfo": {
+            "locations": [
+              "eastus"
+            ],
+            "zones": null
+          },
+          "reasonCode": "NotAvailableForSubscription"
+        }
+      ]
+    },
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_NC4as_T4_v3",
+      "family": "standardNCASv3_T4Family",
+      "locations": [
+        "eastus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "4"
+        }
+      ],
+      "restrictions": []
+    },
+    {
+      "resourceType": "disks",
+      "name": "Standard_LRS",
+      "locations": [
+        "eastus"
+      ],
+      "restrictions": []
+    }
+  ],
+  "skus_centralus": [
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_ND96isr_H100_v5",
+      "family": "standardNDSH100v5Family",
+      "locations": [
+        "centralus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "96"
+        }
+      ],
+      "restrictions": []
+    },
+    {
+      "resourceType": "virtualMachines",
+      "name": "Standard_NC4as_T4_v3",
+      "family": "standardNCASv3_T4Family",
+      "locations": [
+        "centralus"
+      ],
+      "capabilities": [
+        {
+          "name": "vCPUs",
+          "value": "4"
+        }
+      ],
+      "restrictions": []
+    }
+  ],
+  "usage_eastus": [
+    {
+      "currentValue": "0",
+      "limit": "10",
+      "localName": "Total Regional vCPUs",
+      "name": {
+        "localizedValue": "Total Regional vCPUs",
+        "value": "cores"
+      },
+      "unit": "Count"
+    },
+    {
+      "currentValue": "0",
+      "limit": "0",
+      "localName": "Standard Basv2 Family vCPUs",
+      "name": {
+        "localizedValue": "Standard Basv2 Family vCPUs",
+        "value": "standardBasv2Family"
+      },
+      "unit": "Count"
+    },
+    {
+      "currentValue": "2",
+      "limit": "10",
+      "localName": "Standard DASv4 Family vCPUs",
+      "name": {
+        "localizedValue": "Standard DASv4 Family vCPUs",
+        "value": "standardDASv4Family"
+      },
+      "unit": "Count"
+    },
+    {
+      "currentValue": "0",
+      "limit": "3",
+      "localName": "Total Regional Low-priority vCPUs",
+      "name": {
+        "localizedValue": "Total Regional Low-priority vCPUs",
+        "value": "lowPriorityCores"
+      },
+      "unit": "Count"
+    }
+  ],
+  "web_quota_eastus": {
+    "value": [
+      {
+        "id": "/subscriptions/test-subscription/providers/Microsoft.Web/locations/eastus/providers/Microsoft.Quota/quotas/Y1",
+        "name": "Y1",
+        "type": "Microsoft.Quota/Quotas",
+        "properties": {
+          "limit": {
+            "limitObjectType": "LimitValue",
+            "limitType": "Independent",
+            "value": 0
+          },
+          "name": {
+            "value": "Y1",
+            "localizedValue": "Y1"
+          },
+          "isQuotaApplicable": true,
+          "unit": "Count"
+        }
+      },
+      {
+        "id": "/subscriptions/test-subscription/providers/Microsoft.Web/locations/eastus/providers/Microsoft.Quota/quotas/B1",
+        "name": "B1",
+        "type": "Microsoft.Quota/Quotas",
+        "properties": {
+          "limit": {
+            "limitObjectType": "LimitValue",
+            "limitType": "Independent",
+            "value": 0
+          },
+          "name": {
+            "value": "B1",
+            "localizedValue": "B1"
+          },
+          "isQuotaApplicable": true,
+          "unit": "Count"
+        }
+      }
+    ]
+  },
+  "web_quota_centralus": {
+    "value": [
+      {
+        "id": "/subscriptions/test-subscription/providers/Microsoft.Web/locations/centralus/providers/Microsoft.Quota/quotas/Y1",
+        "name": "Y1",
+        "type": "Microsoft.Quota/Quotas",
+        "properties": {
+          "limit": {
+            "limitObjectType": "LimitValue",
+            "limitType": "Independent",
+            "value": 30
+          },
+          "name": {
+            "value": "Y1",
+            "localizedValue": "Y1"
+          },
+          "isQuotaApplicable": true,
+          "unit": "Count"
+        }
+      }
+    ],
+    "nextLink": "https://management.azure.com/subscriptions/test-subscription/providers/Microsoft.Web/locations/centralus/providers/Microsoft.Quota/quotas?api-version=2023-02-01&page=2"
+  },
+  "web_quota_centralus_page2": {
+    "value": [
+      {
+        "id": "/subscriptions/test-subscription/providers/Microsoft.Web/locations/centralus/providers/Microsoft.Quota/quotas/B1",
+        "name": "B1",
+        "type": "Microsoft.Quota/Quotas",
+        "properties": {
+          "limit": {
+            "limitObjectType": "LimitValue",
+            "limitType": "Independent",
+            "value": 30
+          },
+          "name": {
+            "value": "B1",
+            "localizedValue": "B1"
+          },
+          "isQuotaApplicable": true,
+          "unit": "Count"
+        }
+      }
+    ]
+  },
+  "group": {
+    "id": "/subscriptions/test-subscription/resourceGroups/ftg-rg",
+    "location": "eastus",
+    "name": "ftg-rg",
+    "properties": {
+      "provisioningState": "Succeeded"
+    }
+  },
+  "vnet": {
+    "id": "/subscriptions/test-subscription/resourceGroups/network-rg/providers/Microsoft.Network/virtualNetworks/test-vnet",
+    "location": "eastus",
+    "name": "test-vnet",
+    "resourceGroup": "network-rg",
+    "subnets": [
+      {
+        "id": "/subscriptions/test-subscription/resourceGroups/network-rg/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/other",
+        "name": "other",
+        "addressPrefix": "10.0.1.0/24"
+      },
+      {
+        "id": "/subscriptions/test-subscription/resourceGroups/network-rg/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/test-subnet",
+        "name": "test-subnet",
+        "addressPrefix": "10.0.0.0/24",
+        "natGateway": {
+          "id": "/subscriptions/test-subscription/resourceGroups/network-rg/providers/Microsoft.Network/natGateways/test-nat",
+          "resourceGroup": "network-rg"
+        }
+      }
+    ]
+  },
+  "assignments_group_contributor_sub_uaa": [
+    {
+      "principalName": "dev@example.com",
+      "roleDefinitionId": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/contributor-id",
+      "roleDefinitionName": "Contributor",
+      "scope": "/subscriptions/test-subscription/resourceGroups/ftg-rg",
+      "condition": null
+    },
+    {
+      "principalName": "dev@example.com",
+      "roleDefinitionId": "/subscriptions/test-subscription/providers/Microsoft.Authorization/roleDefinitions/uaa-id",
+      "roleDefinitionName": "User Access Administrator",
+      "scope": "/subscriptions/test-subscription",
+      "condition": null
+    }
+  ],
+  "list_skus_eastus_real": [
+    {
+      "capabilities": [
+        {
+          "name": "MaxResourceVolumeMB",
+          "value": "16384"
+        },
+        {
+          "name": "OSVhdSizeMB",
+          "value": "1047552"
+        },
+        {
+          "name": "vCPUs",
+          "value": "2"
+        },
+        {
+          "name": "MemoryPreservingMaintenanceSupported",
+          "value": "True"
+        },
+        {
+          "name": "HyperVGenerations",
+          "value": "V1,V2"
+        },
+        {
+          "name": "SupportedCapacityReservationTypes",
+          "value": "Open,Targeted"
+        },
+        {
+          "name": "SupportedEphemeralOSDiskPlacements",
+          "value": "ResourceDisk,CacheDisk"
+        },
+        {
+          "name": "MemoryGB",
+          "value": "8"
+        },
+        {
+          "name": "MaxDataDiskCount",
+          "value": "4"
+        },
+        {
+          "name": "CpuArchitectureType",
+          "value": "x64"
+        },
+        {
+          "name": "LowPriorityCapable",
+          "value": "True"
+        },
+        {
+          "name": "PremiumIO",
+          "value": "True"
+        },
+        {
+          "name": "VMDeploymentTypes",
+          "value": "IaaS,PaaS"
+        },
+        {
+          "name": "vCPUsConstraintsAllowed",
+          "value": "1, 2"
+        },
+        {
+          "name": "vCPUsAvailable",
+          "value": "2"
+        },
+        {
+          "name": "vCPUsPerCore",
+          "value": "2"
+        },
+        {
+          "name": "CombinedTempDiskAndCachedIOPS",
+          "value": "4000"
+        },
+        {
+          "name": "CombinedTempDiskAndCachedReadBytesPerSecond",
+          "value": "32768000"
+        },
+        {
+          "name": "CombinedTempDiskAndCachedWriteBytesPerSecond",
+          "value": "32768000"
+        },
+        {
+          "name": "UncachedDiskIOPS",
+          "value": "3200"
+        },
+        {
+          "name": "UncachedDiskBytesPerSecond",
+          "value": "48000000"
+        },
+        {
+          "name": "EphemeralOSDiskSupported",
+          "value": "True"
+        },
+        {
+          "name": "EncryptionAtHostSupported",
+          "value": "True"
+        },
+        {
+          "name": "CapacityReservationSupported",
+          "value": "True"
+        },
+        {
+          "name": "AcceleratedNetworkingEnabled",
+          "value": "True"
+        },
+        {
+          "name": "RdmaEnabled",
+          "value": "False"
+        },
+        {
+          "name": "MaxNetworkInterfaces",
+          "value": "2"
+        }
+      ],
+      "family": "standardDASv4Family",
+      "locationInfo": [
+        {
+          "location": "eastus",
+          "zoneDetails": [
+            {
+              "capabilities": [
+                {
+                  "name": "UltraSSDAvailable",
+                  "value": "True"
+                }
+              ],
+              "name": [
+                "3",
+                "2",
+                "1"
+              ]
+            }
+          ],
+          "zones": [
+            "3",
+            "2",
+            "1"
+          ]
+        }
+      ],
+      "locations": [
+        "eastus"
+      ],
+      "name": "Standard_D2as_v4",
+      "resourceType": "virtualMachines",
+      "restrictions": [],
+      "size": "D2as_v4",
+      "tier": "Standard"
+    },
+    {
+      "capabilities": [
+        {
+          "name": "MaxResourceVolumeMB",
+          "value": "180224"
+        },
+        {
+          "name": "OSVhdSizeMB",
+          "value": "1047552"
+        },
+        {
+          "name": "vCPUs",
+          "value": "4"
+        },
+        {
+          "name": "MemoryPreservingMaintenanceSupported",
+          "value": "False"
+        },
+        {
+          "name": "HyperVGenerations",
+          "value": "V1,V2"
+        },
+        {
+          "name": "SupportedCapacityReservationTypes",
+          "value": "Open,Targeted"
+        },
+        {
+          "name": "SupportedEphemeralOSDiskPlacements",
+          "value": "ResourceDisk,CacheDisk"
+        },
+        {
+          "name": "MemoryGB",
+          "value": "28"
+        },
+        {
+          "name": "MaxDataDiskCount",
+          "value": "8"
+        },
+        {
+          "name": "CpuArchitectureType",
+          "value": "x64"
+        },
+        {
+          "name": "LowPriorityCapable",
+          "value": "True"
+        },
+        {
+          "name": "PremiumIO",
+          "value": "True"
+        },
+        {
+          "name": "VMDeploymentTypes",
+          "value": "IaaS"
+        },
+        {
+          "name": "vCPUsConstraintsAllowed",
+          "value": "1, 2, 4"
+        },
+        {
+          "name": "vCPUsAvailable",
+          "value": "4"
+        },
+        {
+          "name": "GPUs",
+          "value": "1"
+        },
+        {
+          "name": "vCPUsPerCore",
+          "value": "1"
+        },
+        {
+          "name": "CombinedTempDiskAndCachedIOPS",
+          "value": "4000"
+        },
+        {
+          "name": "CombinedTempDiskAndCachedReadBytesPerSecond",
+          "value": "62914560"
+        },
+        {
+          "name": "CombinedTempDiskAndCachedWriteBytesPerSecond",
+          "value": "62914560"
+        },
+        {
+          "name": "UncachedDiskIOPS",
+          "value": "48000"
+        },
+        {
+          "name": "UncachedDiskBytesPerSecond",
+          "value": "737280000"
+        },
+        {
+          "name": "EphemeralOSDiskSupported",
+          "value": "True"
+        },
+        {
+          "name": "EncryptionAtHostSupported",
+          "value": "True"
+        },
+        {
+          "name": "CapacityReservationSupported",
+          "value": "True"
+        },
+        {
+          "name": "AcceleratedNetworkingEnabled",
+          "value": "True"
+        },
+        {
+          "name": "RdmaEnabled",
+          "value": "False"
+        },
+        {
+          "name": "MaxNetworkInterfaces",
+          "value": "4"
+        }
+      ],
+      "family": "Standard NCASv3_T4 Family",
+      "locationInfo": [
+        {
+          "location": "eastus",
+          "zoneDetails": [
+            {
+              "capabilities": [
+                {
+                  "name": "UltraSSDAvailable",
+                  "value": "True"
+                }
+              ],
+              "name": [
+                "2",
+                "1",
+                "3"
+              ]
+            }
+          ],
+          "zones": [
+            "2",
+            "1",
+            "3"
+          ]
+        }
+      ],
+      "locations": [
+        "eastus"
+      ],
+      "name": "Standard_NC4as_T4_v3",
+      "resourceType": "virtualMachines",
+      "restrictions": [],
+      "size": "NC4as_T4_v3",
+      "tier": "Standard"
+    }
+  ],
+  "skus_eastus_a100_restricted": {
+    "resourceType": "virtualMachines",
+    "name": "Standard_NC24ads_A100_v4",
+    "family": "standardNCADSA100v4Family",
+    "locations": [
+      "eastus"
+    ],
+    "capabilities": [
+      {
+        "name": "vCPUs",
+        "value": "24"
+      },
+      {
+        "name": "GPUs",
+        "value": "1"
+      }
+    ],
+    "restrictions": [
+      {
+        "type": "Location",
+        "values": [
+          "eastus"
+        ],
+        "restrictionInfo": {
+          "locations": [
+            "eastus"
+          ],
+          "zones": null
+        },
+        "reasonCode": "NotAvailableForSubscription"
+      }
+    ]
+  }
+}

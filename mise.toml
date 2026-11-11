@@ -1,0 +1,44 @@
+# Tools for the hooks and lint targets. This file is the only place for versions.
+# node runs markdownlint-cli2.
+[tools]
+node = "22.22.2"
+"github:lycheeverse/lychee" = "lychee-v0.24.2"
+"npm:markdownlint-cli2" = "0.23.3"
+
+# Tools for the build: the prober and sweeper (Python), the stacks (OpenTofu).
+python = "3.12.15"
+uv = "0.13.0"
+opentofu = "1.12.6"
+duckdb = "1.5.6"
+
+# azcopy runs the data/sync/azure target (tasks/Makefile.data). 10.32.8 was the newest stable
+# release when it was pinned (2026-08-27).
+"github:Azure/azure-storage-azcopy" = "10.32.8"
+
+# One OpenTofu provider cache for every worktree and every run (tofu init, tofu test, make targets).
+# Without it each .terraform directory holds its own copy of the providers (about 1.4 GB per stack).
+# See CONTRIBUTING.md. OpenTofu 1.12.6 prints "Error: The specified plugin cache dir ... cannot be opened" for a
+# missing directory, then creates it and exits 0; the postinstall hook creates it first, so the line
+# does not appear: https://opentofu.org/docs/cli/config/config-file/#provider-plugin-cache
+# The lock files exist, so TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE is not needed.
+[env]
+TF_PLUGIN_CACHE_DIR = "{{env.HOME}}/.cache/opentofu/plugin-cache"
+
+[hooks]
+postinstall = 'mkdir -p "$TF_PLUGIN_CACHE_DIR"'
+
+[settings]
+# mise.lock holds the checksums of the pinned tools. Run `mise lock` after a version change.
+lockfile = true
+
+# Entry points for running the board locally. `mise tasks` lists them. The Make targets
+# are the entry point (tasks/Makefile.web); the tasks call them.
+[tasks.dev]
+description = "Run the board with fresh data: sync, rebuild the database, start the board (make dev)"
+run = "scripts/dev.sh"
+quiet = true
+
+[tasks.web]
+description = "Start the board on the local data (no sync)"
+run = "trap 'exit 0' INT; make -s web/run WEB_QUIET=1"
+quiet = true

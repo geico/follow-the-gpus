@@ -1,0 +1,15 @@
+# Companion of provisioning_guard_aws.yaml: the same fixture, with only `allow_billable_provisioning: true`
+# added to the 1 provisioning_probes entry. `validate()` must report 0 faults on this file.
+# `test_shared_allocation_guard_aws_fixtures_differ_only_by_allow_billable_provisioning` in
+# prober/tests/test_config.py keeps the 2 files from drifting out of step.
+experiment: ftg-20261014-example
+aws:
+  jobs:
+    - {module: aws_spot_score, regions: [us-east-1]}
+  modules:
+    aws_spot_score:
+      type: aws_spot_score
+      spot_score_requests:
+        - {name: p5-1x, instance_types: [p5.4xlarge], label: "1x H100"}
+  provisioning_probes:
+    - {instance_type: m5.large, region: us-east-1, n: 2, allow_billable_provisioning: true}
