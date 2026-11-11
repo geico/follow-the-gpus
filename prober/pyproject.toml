@@ -29,7 +29,7 @@ ftg-prober = "ftg_prober.cli:main"
 
 [dependency-groups]
 dev = [
-    "pytest==8.4.2",
+    "pytest==9.1.1",
     "ruff==0.14.0",
 ]
 
