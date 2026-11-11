@@ -127,4 +127,3 @@ A fresh clone has no `data/live/`. Thus `make web/run` builds `data/sample.duckd
 | `src/board/view/` | the React components |
 | `src/data/` | the `DataSource` client |
 | `src/components/ui/` | shadcn/ui source |
-| `test/` | the Vitest tests; `test/fixtures/board/` holds the seeded fixture |

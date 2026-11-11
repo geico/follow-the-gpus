@@ -2,6 +2,8 @@
 
 The requirements, design, and decisions of the GPU capacity tracker. The spec is the source of truth for the product ([ADR 0003](../decisions/0003-specs-are-the-source-of-truth.md)).
 
+The specs name test files as checks. The tests are not part of this repository.
+
 | File | Topic | Date |
 |---|---|---|
 | [Project description](0001-project-description.md) | The problem, the broker goal, and the design limits | 2026-10-11 |

@@ -21,8 +21,7 @@ recorded answer for `Standard_D2as_v4` in `eastus` holds 6 items, all with
 the same `armSkuName`. The `skuName` field tells them apart: `D2as v4`,
 `D2as v4 Spot`, and `D2as v4 Low Priority`. The `productName` field ends in
 `Windows` for the Windows items. The Spot and Low Priority items cost far
-less than the normal item. We recorded the answer on 2026-10-16. The recorded fixture is
-`preflight/tests/fixtures/azure_retail_prices_d2as_v4_eastus.json`.
+less than the normal item. We recorded the answer on 2026-10-16.
 
 ## Example
 
@@ -44,4 +43,3 @@ lookup when the result is not exactly 1 price.
 ## Sources
 
 - [Azure Retail Prices REST API (Microsoft Learn)](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
-- [preflight/tests/fixtures/azure_retail_prices_d2as_v4_eastus.json](../../preflight/tests/fixtures/azure_retail_prices_d2as_v4_eastus.json)

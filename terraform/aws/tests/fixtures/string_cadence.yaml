@@ -1,4 +1,0 @@
-# For tofu test only: a cadence that is a string must fail the plan.
-experiment: ftg-20261014-string-cadence
-aws:
-  cadence: oops

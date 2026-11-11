@@ -47,9 +47,3 @@ lint/azure:
 	$(AZURE_TF) fmt -check -recursive
 	$(AZURE_TF) init -backend=false -input=false >/dev/null
 	$(AZURE_TF) validate
-
-.PHONY: test/azure
-## Test the targets file to resource mapping with mock providers (no credentials)
-test/azure:
-	$(AZURE_TF) init -backend=false -input=false >/dev/null
-	$(AZURE_TF) test

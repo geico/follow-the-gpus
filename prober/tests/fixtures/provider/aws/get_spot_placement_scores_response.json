@@ -1,8 +1,0 @@
-{
-  "SpotPlacementScores": [
-    { "Region": "us-east-1", "Score": 1 },
-    { "Region": "us-east-2", "Score": 1 },
-    { "Region": "us-west-2", "Score": 3 }
-  ],
-  "NextToken": null
-}

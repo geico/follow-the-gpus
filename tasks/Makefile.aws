@@ -53,10 +53,3 @@ lint/aws:
 	$(AWS_TF) fmt -check -recursive
 	$(AWS_TF) init -backend=false -input=false
 	$(AWS_TF) validate
-
-.PHONY: test/aws
-## Run the OpenTofu tests of the AWS stack with mock providers (no credentials needed)
-test/aws:
-	bash -n $(AWS_TF_DIR)/user_data.sh.tftpl
-	$(AWS_TF) init -backend=false -input=false
-	$(AWS_TF) test
