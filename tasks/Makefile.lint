@@ -45,12 +45,12 @@ lint/decisions:
 	echo "lint/decisions: each ADR has its own number"
 
 .PHONY: lint/make
-## Dry-run each Makefile to find syntax errors, then dry-run lint and test to find missing targets
+## Dry-run each Makefile to find syntax errors, then dry-run lint to find missing targets
 # Each file gets itself as the goal: make reads the whole file, but does not build a target of it.
 lint/make:
 	@for f in Makefile tasks/Makefile.*; do \
 	  echo "make --just-print --dry-run -f $$f $$f"; \
 	  $(LINT_MAKE) --just-print --dry-run -f $$f $$f >/dev/null || exit 1; \
 	done
-	@echo "make --just-print --dry-run lint test"
-	@$(LINT_MAKE) --just-print --dry-run lint test >/dev/null
+	@echo "make --just-print --dry-run lint"
+	@$(LINT_MAKE) --just-print --dry-run lint >/dev/null

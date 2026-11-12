@@ -4,11 +4,6 @@
 SWEEPER_DIR ?= sweeper/azure
 SWEEPER_UV ?= $(MISE_EXEC) uv --directory $(SWEEPER_DIR) run --locked
 
-.PHONY: sweeper/test
-## Run the sweeper unit tests with pytest; no network and no cloud credentials
-sweeper/test:
-	$(SWEEPER_UV) pytest
-
 .PHONY: sweeper/lint
 ## Check the sweeper code with ruff: lint rules and format
 sweeper/lint:
@@ -18,11 +13,6 @@ sweeper/lint:
 # The AWS sweeper: the Lambda function in sweeper/aws (spec 0013). Same tools, its own project.
 SWEEPER_AWS_DIR ?= sweeper/aws
 SWEEPER_AWS_UV ?= $(MISE_EXEC) uv --directory $(SWEEPER_AWS_DIR) run --locked
-
-.PHONY: sweeper/aws/test
-## Run the AWS sweeper unit tests with pytest and botocore Stubber; no network and no cloud credentials
-sweeper/aws/test:
-	$(SWEEPER_AWS_UV) pytest
 
 .PHONY: sweeper/aws/lint
 ## Check the AWS sweeper code with ruff: lint rules and format

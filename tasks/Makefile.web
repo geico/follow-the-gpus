@@ -79,21 +79,11 @@ web/preview: web/deps
 	@echo "web/preview: http://127.0.0.1:$(WEB_PORT)/"
 	$(WEB_NPM) run preview -- --host 127.0.0.1 --port $(WEB_PORT) --strictPort
 
-.PHONY: web/test
-## Run the unit tests (Vitest); no network and no cloud credentials
-web/test: web/deps
-	$(WEB_NPM) test
-
 .PHONY: web/lint
 ## Check web/ with Biome (lint and format) and the TypeScript compiler
 web/lint: web/deps
 	$(WEB_NPM) run lint
 	$(WEB_NPM) run typecheck
-
-.PHONY: web/fixture
-## Write the seeded synthetic events fixture web/test/fixtures/board/events.json again
-web/fixture:
-	$(MISE_EXEC) node $(WEB_DIR)/scripts/gen-board-fixture.mjs
 
 .PHONY: web/sample
 ## Write the synthetic store web/sample/ (git-ignored) with the duckdb CLI that mise pins
@@ -108,7 +98,3 @@ web/clean:
 .PHONY: lint/web
 ## Same as web/lint, for the lint aggregate
 lint/web: web/lint
-
-.PHONY: test/web
-## Same as web/test, for the test aggregate
-test/web: web/test

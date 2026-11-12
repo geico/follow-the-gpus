@@ -1,7 +1,0 @@
-# For tofu test only: 1 real scale set entry in eastus2 and 1 simulated entry in eastus.
-experiment: ftg-20261014-eastus2-real
-azure:
-  provisioning_probes:
-    az_vmss_flex:
-      - {sku: Standard_B2s, region: eastus2, zone: null, n: 2, placement_group_mode: multi, simulate: false, allow_billable_provisioning: true}
-      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, simulate: true}

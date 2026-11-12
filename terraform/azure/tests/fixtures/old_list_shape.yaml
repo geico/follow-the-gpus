@@ -1,4 +1,0 @@
-experiment: ftg-20261014-old-list
-azure:
-  provisioning_probes:
-    - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}

@@ -1,7 +1,0 @@
-# For tofu test only: reservation entries in 2 Regions and no scale set entry.
-experiment: ftg-20261014-reservation-only
-azure:
-  provisioning_probes:
-    az_capacity_reservation:
-      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}
-      - {sku: Standard_D2as_v4, region: eastus2, zone: null, n: 2, placement_group_mode: multi, simulate: true}

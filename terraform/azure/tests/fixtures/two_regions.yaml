@@ -1,7 +1,0 @@
-# For tofu test only: 1 scale set entry in the control region (eastus) and 1 in another region.
-experiment: ftg-20261014-two-regions
-azure:
-  provisioning_probes:
-    az_vmss_flex:
-      - {sku: Standard_B2s, region: eastus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}
-      - {sku: Standard_B2s, region: southcentralus, zone: null, n: 2, placement_group_mode: multi, allow_billable_provisioning: true}

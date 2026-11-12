@@ -105,4 +105,3 @@ make probes/status OUT=probes.md      # the same, also written to a file
 - `ftg_preflight/spend.py`: the read-only `make probes/spend` estimate.
 - `ftg_preflight/quota_status.py`: the read-only `status` command: the requests and their support tickets.
 - `ftg_preflight/report.py`: the levels, the output, and the exit code.
-- `tests/fixtures/`: recorded responses in the shape of the cloud APIs. They hold no account ID, subscription ID, or resource name.

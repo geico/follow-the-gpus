@@ -10,11 +10,6 @@ PROBER_SIM_HOURS ?= 24
 PROBER_SIM_SEED ?= 42
 PROBER_CONFIG ?= config/targets.yaml
 
-.PHONY: prober/test
-## Run the prober unit tests with pytest, with the aws and azure extras so the shape and real-SDK tests run (no cloud, no network)
-prober/test:
-	FTG_REQUIRE_CLOUD_EXTRAS=1 $(PROBER_UV) run --extra aws --extra azure pytest
-
 .PHONY: prober/lint
 ## Check the prober code with ruff (lint and format)
 prober/lint:

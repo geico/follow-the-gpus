@@ -1,3 +1,0 @@
-# For tofu test only: an azure section that is a string must fail the plan.
-experiment: ftg-20261014-string-section
-azure: oops

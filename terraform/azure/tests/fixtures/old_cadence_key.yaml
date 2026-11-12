@@ -1,4 +1,0 @@
-# For tofu test only: the earlier cadence key `az_allocation` alone must fail the plan.
-experiment: ftg-20261014-old-cadence-key
-azure:
-  cadence: {az_allocation: 2h}

@@ -11,7 +11,7 @@ Status: early. The sample board runs with no cloud. The deploy steps need an AWS
 You need `make`, and either [mise](https://mise.jdx.dev/) or the tools below.
 
 ```sh
-make init                  # with mise: pins the tools (it runs mise trust). Turns on the git hooks
+make init                  # with mise: pins the tools (it runs mise trust)
 make web/run                # open http://127.0.0.1:4173/
 ```
 
@@ -61,7 +61,7 @@ Page by page: [deploy on AWS](docs/deploy-aws.md), [deploy on Azure](docs/deploy
 
 ## Contributing and security
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+This project is provided as-is. Issues are welcome. We do not accept pull requests. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Disclaimer
 

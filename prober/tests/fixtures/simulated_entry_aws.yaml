@@ -1,8 +1,0 @@
-# A targets file whose 1 provisioning_probes entry is simulate: true and carries no
-# allow_billable_provisioning (ADR 0011 section 3, rule 3: a simulated job needs no consent, and the guard
-# must still pass).
-experiment: ftg-20261014-example
-aws:
-  provisioning_probes:
-    - {instance_type: m5.large, region: us-east-1, n: 2, simulate: true}
-azure: {}

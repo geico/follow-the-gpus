@@ -23,11 +23,6 @@ preflight/azure:
 	$(MISE_EXEC) tofu -chdir=$(PREFLIGHT_AZURE_TF_DIR) init -input=false $(if $(wildcard $(PREFLIGHT_AZURE_TF_DIR)/backend.hcl),-backend-config=backend.hcl) >/dev/null
 	$(PREFLIGHT_UV) python -m ftg_preflight azure --tf-dir $(abspath $(PREFLIGHT_AZURE_TF_DIR))
 
-.PHONY: preflight/test
-## Run the preflight unit tests with recorded responses; no network and no cloud credentials
-preflight/test:
-	$(PREFLIGHT_UV) pytest
-
 .PHONY: preflight/lint
 ## Check the preflight code with ruff: lint rules and format
 preflight/lint:

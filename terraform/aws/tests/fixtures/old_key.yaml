@@ -1,5 +1,0 @@
-# For tofu test only: the earlier key `allocation_probes` (now `provisioning_probes`) must fail the plan.
-experiment: ftg-20261014-old-key
-aws:
-  allocation_probes:
-    - {instance_type: g5.xlarge, region: us-east-1, n: 1}

@@ -77,26 +77,13 @@ A file name states the lesson, for example
 
 | Brief | Date |
 |---|---|
-| [A Capacity Block search rounds its start to now + 30 minutes or to 11:30 UTC](capacity-block-starts-round-to-1130-utc.md) | 2026-10-13 |
-| [A wide Capacity Block search returned the earliest offer every time: AWS promises only the lowest price](capacity-block-search-returns-earliest-not-cheapest.md) | 2026-10-13 |
-| [A longer Capacity Block started up to 15 days later, never earlier](capacity-block-earliest-start-depends-on-length.md) | 2026-10-13 |
-| [A single GPU instance type can score 9 on the AWS Spot placement score](aws-spot-score-single-gpu-type-can-score-9.md) | 2026-10-11 |
-| [AWS gives no number for the Spot placement score configuration limit](aws-spot-score-configuration-limit-has-no-number.md) | 2026-10-12 |
-| [An interruptible Capacity Reservation is visible only to a shared account](aws-interruptible-capacity-reservation-needs-a-share.md) | 2026-10-12 |
-| [The Azure Spot Placement Score has no 3-size rule](azure-spot-score-has-no-3-size-rule.md) | 2026-10-11 |
-| [Azure's isQuotaAvailable field can flip from true to false as you raise the VM count](azure-isquotaavailable-changes-with-vm-count.md) | 2026-10-12 |
-| [A Spot placement score mix control must use 1 GPU class, not 3](aws-spot-score-gpu-trio-must-share-1-gpu-class.md) | 2026-10-13 |
-| [Pair a single type with a same-class mix, to test for the Spot score penalty](aws-spot-score-pair-single-with-mix-to-test-for-penalty.md) | 2026-10-13 |
 | [Azure docs do not say that What-If or validate check on-demand GPU capacity](no-doc-says-azure-what-if-or-validate-checks-on-demand-capacity.md) | 2026-10-14 |
 | [Azure's RestrictedSkuNotAvailable can flip within hours](azure-restricted-sku-can-flip-within-hours.md) | 2026-10-15 |
-| [Most Azure A10 and A100 GPU Spot prices sat at 18.5 % of pay-as-you-go](azure-most-a10-and-a100-spot-prices-sit-at-18-5-percent.md) | 2026-10-15 |
 | [Azure Flexible scale sets reject singlePlacementGroup=true with OperationNotAllowed](azure-flexible-scale-set-rejects-single-placement-group.md) | 2026-10-16 |
-| [az vm list-skus leaves out restricted sizes unless you pass --all](azure-cli-list-skus-hides-restricted-sizes.md) | 2026-10-16 |
 | [AWS Spot price records were stamped on the hour, about 6 hours apart per zone](aws-spot-price-records-were-on-the-hour-in-our-window.md) | 2026-10-15 |
 | [A Flexible scale-set member lists its NIC before the NIC exists](azure-flexible-scale-set-member-lists-nic-before-it-exists.md) | 2026-10-16 |
 | [The Azure capacity reservation docs give no billing granularity, so we do not know the minimum charge](azure-capacity-reservation-billing-granularity-not-documented.md) | 2026-10-16 |
 | [A failed zip deploy of an Azure Function App can leave a clean plan and old code](azure-failed-zip-deploy-can-leave-a-clean-plan.md) | 2026-10-17 |
 | [Azure Retail Prices returns Spot and Low Priority items under the same armSkuName](azure-retail-prices-spot-and-low-priority-share-armskuname.md) | 2026-10-17 |
-| [A low score for a 3-type CPU request can be real Spot shortage](aws-spot-score-cpu-trio-low-score-can-be-real-shortage.md) | 2026-10-27 |
 
 Read [research/README.md](../README.md) for the full list of research notes.

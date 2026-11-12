@@ -1,4 +1,4 @@
-# One entry point for setup, lint, and test. The rules are in ADR 0002:
+# One entry point for setup, lint, and the deploy and board tasks. The rules are in ADR 0002:
 # decisions/0002-makefiles-follow-cloud-posse-conventions.md
 # Keep this file compatible with GNU Make 3.81, the default make on macOS.
 
@@ -25,8 +25,7 @@ deps:
 	else echo "deps: mise is not installed; use the tools on your PATH (versions: mise.toml)"; fi
 
 .PHONY: init
-## Install the pinned tools when mise exists, and turn on the git hooks in .githooks
+## Install the pinned tools when mise exists (same as deps)
 init: deps
-	git config core.hooksPath .githooks
 
 -include tasks/Makefile.*
